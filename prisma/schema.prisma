@@ -1,0 +1,65 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User{
+  id                 String           @id @default(uuid())
+  email              String           @unique
+  password           String         
+  displayName        String           @default("userX")
+  createdAt          DateTime         @default(now())
+
+  // Relations
+  uploadedImages     noteDetails[]    @relation("UploadedImages")
+  fetchHistory       fetchDetails[]   @relation("FetchHistory")
+
+  @@index([email])
+}
+
+model noteDetails{
+  id                 String           @id @default(uuid())
+  type               String         
+  imgName            String
+  imageSize          Int
+  imageKey           String           @default("publicIMG")
+  createdAt          DateTime         @default(now())
+
+  // Relations
+  uploadedBy         String
+  uploader           User             @relation("UploadedImages", fields: [uploadedBy], references: [id], onDelete: Cascade)
+
+  fetchHistory       fetchDetails[]   @relation("ImageFetchHistory")
+
+  @@index([uploadedBy])
+  @@index([type])
+  @@index([createdAt])
+}
+
+model fetchDetails{
+  id                 String           @id @default(uuid())
+  type               String
+  accessedAt         DateTime         @default(now())
+
+  // Relations
+  accessedBy         String
+  accessor           User             @relation("FetchHistory", fields: [accessedBy], references: [id], onDelete: Cascade)
+
+  imageId            String
+  image              noteDetails      @relation("ImageFetchHistory", fields: [imageId], references: [id], onDelete: Cascade)
+
+  @@index([accessedBy])
+  @@index([imageId])
+  @@index([accessedAt])
+}
