@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, ChangeEvent, DragEvent } from 'react';
+import React, { useState, ChangeEvent, DragEvent, useEffect } from 'react';
 import { Upload, X, CheckCircle, AlertCircle, Lock, Unlock, FileImage } from 'lucide-react';
 import axios from 'axios';
+import { LoadingScreen } from '@/components/loadingScreen';
 
 type UploadType = 'public' | 'private';
 
@@ -99,13 +100,10 @@ const noteShare: React.FC = () => {
 
             const response = await axios.put('/api/uploadIMG', {
                 type,
-                imgName: fileName,
+                imgName: file.name.split('.')[0],
                 imageSize: file.size,
-                imageKey: type === 'private' ? imageKey : undefined,
-                contentType: file.type as 'image/jpeg' | 'image/png'
-            }, {
-                headers: { 'Content-Type': 'application/json' },
-                withCredentials: true
+                imageKey: imageKey || undefined,
+                contentType: file.type,
             });
 
             if (response.status !== 200) {
@@ -115,7 +113,9 @@ const noteShare: React.FC = () => {
             const data: UploadResponse = response.data;
 
             const uploadResponse = await axios.put(data.signedUrl, file, {
-                headers: { 'Content-Type': file.type }
+                headers: {
+                    "Content-Type": file.type
+                }
             });
 
             if (uploadResponse.status !== 200) {

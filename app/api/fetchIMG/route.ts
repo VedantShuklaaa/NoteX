@@ -6,6 +6,7 @@ import { cookies } from "next/headers";
 import { getUserFromToken } from "@/lib/auth";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import * as bcrypt from 'bcryptjs';
 
 const fetchImgSchema = z.object({
     imgID: z.string(),
@@ -13,16 +14,17 @@ const fetchImgSchema = z.object({
 });
 
 const s3Client = new S3Client({
-    region: String(process.env.region),
+    region: process.env.REGION!,
     credentials: {
-        accessKeyId: String(process.env.accessKeyId),
-        secretAccessKey: String(process.env.secretAccessKey),
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!
     }
 });
 
 async function getGetObjectSignedUrl(key: string): Promise<string> {
+    const bucketName = process.env.BUCKET;
     const command = new GetObjectCommand({
-        Bucket: String(process.env.Bucket),
+        Bucket: bucketName,
         Key: key,
     });
     return getSignedUrl(s3Client, command, { expiresIn: 3600 });
@@ -107,7 +109,8 @@ export async function PUT(req: NextRequest) {
                 );
             }
             
-            if (imageKey !== image.imageKey) {
+            const isValidKey = await bcrypt.compare(imageKey, image.imageKey);
+            if (!isValidKey) {
                 return NextResponse.json(
                     { error: "incorrect image key" },
                     { status: 403 }

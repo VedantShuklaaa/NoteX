@@ -23,10 +23,10 @@ const uploadImgSchema = z.object({
 });
 
 const s3Client = new S3Client({
-    region: String(process.env.region),
+    region: process.env.REGION!,
     credentials: {
-        accessKeyId: String(process.env.accessKeyId),
-        secretAccessKey: String(process.env.secretAccessKey),
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
     },
 });
 
@@ -36,14 +36,20 @@ async function getPutObjectSignedUrl(
     imgName: string,
     contentType: string
 ): Promise<string> {
+    const bucketName = process.env.BUCKET;
+    const key = `${userName}/${type}/${imgName}`;
     const command = new PutObjectCommand({
-        Bucket: String(process.env.Bucket),
-        Key: `${userName}/${type}/${imgName}`,
+        Bucket: bucketName,
+        Key: key,
         ContentType: contentType,
     });
 
-    return getSignedUrl(s3Client, command, { expiresIn: 3600 });
+    const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+    console.log('Generated URL:', signedUrl.substring(0, 100) + '...');
+
+    return signedUrl;
 }
+
 
 export async function PUT(req: NextRequest) {
     if (!process.env.OPTIMIZE_API_KEY) {
@@ -90,7 +96,7 @@ export async function PUT(req: NextRequest) {
             { status: 400 }
         );
     }
-
+    
     try {
         const user = await db.user.findUnique({
             where: {
@@ -118,6 +124,7 @@ export async function PUT(req: NextRequest) {
             ? await bcrypt.hash(imageKey, SALT_ROUNDS)
             : "publicIMG";
 
+            
         const [signedUrl, dbRecord] = await Promise.all([
             getPutObjectSignedUrl(user.displayName, type, uniqueImgName, contentType),
             db.noteDetails.create({
@@ -125,7 +132,7 @@ export async function PUT(req: NextRequest) {
                     type,
                     imgName: uniqueImgName,
                     imageKey: encryptedIMGKey,
-                    uploadedBy: user.email,
+                    uploadedBy: user.id,
                     imageSize,
                 },
                 select: {
@@ -138,13 +145,16 @@ export async function PUT(req: NextRequest) {
             })
         ]);
 
+        console.log("signed url: ", signedUrl.substring(0,100), "...")
+        console.log("dbRecord: ", dbRecord)
         return NextResponse.json(
             {
                 message: "image upload prepared successfully",
                 signedUrl,
                 dbRecord
+                
             },
-            { status: 200 }
+            { status: 200, }
         );
 
     } catch (err: unknown) {
