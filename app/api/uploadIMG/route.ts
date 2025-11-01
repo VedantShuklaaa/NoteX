@@ -96,7 +96,7 @@ export async function PUT(req: NextRequest) {
             { status: 400 }
         );
     }
-    
+
     try {
         const user = await db.user.findUnique({
             where: {
@@ -124,7 +124,7 @@ export async function PUT(req: NextRequest) {
             ? await bcrypt.hash(imageKey, SALT_ROUNDS)
             : "publicIMG";
 
-            
+
         const [signedUrl, dbRecord] = await Promise.all([
             getPutObjectSignedUrl(user.displayName, type, uniqueImgName, contentType),
             db.noteDetails.create({
@@ -145,14 +145,14 @@ export async function PUT(req: NextRequest) {
             })
         ]);
 
-        console.log("signed url: ", signedUrl.substring(0,100), "...")
+        console.log("signed url: ", signedUrl.substring(0, 100), "...")
         console.log("dbRecord: ", dbRecord)
         return NextResponse.json(
             {
                 message: "image upload prepared successfully",
                 signedUrl,
                 dbRecord
-                
+
             },
             { status: 200, }
         );

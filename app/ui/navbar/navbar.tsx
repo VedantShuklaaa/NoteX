@@ -1,5 +1,4 @@
 "use client";
-
 import {
   Navbar,
   NavBody,
@@ -15,6 +14,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import Loader from "@/components/ui/loader";
 
 interface User {
   email: string;
@@ -47,6 +47,7 @@ export default function NavigationBar() {
     },
   ];
 
+
   useEffect(() => {
     checkAuth();
   }, []);
@@ -69,7 +70,14 @@ export default function NavigationBar() {
     }
   };
 
+  if (loading) {
+    return (
+      <Loader/>
+    );
+  }
+
   const handleLogout = async () => {
+    setLoading(true)
     try {
       await axios.post("/api/user/logout", {}, {
         withCredentials: true,
@@ -79,10 +87,12 @@ export default function NavigationBar() {
       setUser(null);
       setIsMenuOpen(false);
       router.push("/");
+      setLoading(false)
     } catch (error) {
       console.error("Logout error:", error);
     }
   };
+
 
   return (
     <Navbar>
@@ -106,10 +116,10 @@ export default function NavigationBar() {
             </>
           ) : (
             <>
-              <NavbarButton variant="secondary" href="navs/auth/login" className="rounded-[1rem]">
+              <NavbarButton variant="secondary" href="auth/login" className="rounded-[1rem]">
                 Login
               </NavbarButton>
-              <NavbarButton href="navs/auth/signup" className="rounded-[1rem]">
+              <NavbarButton href="auth/signup" className="rounded-[1rem]">
                 Sign Up
               </NavbarButton>
             </>
@@ -168,3 +178,4 @@ export default function NavigationBar() {
     </Navbar>
   );
 }
+

@@ -4,7 +4,7 @@ import GradientBackground from "@/components/ui/background";
 
 export default function findnotes() {
     return(
-        <div className="h-[100vh] bg-[var(--background)]">
+        <div className="h-[110vh] bg-[var(--background)]">
             <GradientBackground/>
             <GradientBackground/>
             <NotesFind/>

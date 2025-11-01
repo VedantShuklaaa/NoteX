@@ -1,164 +1,187 @@
-import { NextResponse, NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import db from '@/lib/db';
-import { z } from 'zod';
 import { cookies } from "next/headers";
 import { getUserFromToken } from "@/lib/auth";
+import * as bcrypt from 'bcryptjs';
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import * as bcrypt from 'bcryptjs';
 
-const fetchImgSchema = z.object({
-    imgID: z.string(),
-    imageKey: z.string().optional(),
-});
 
-const s3Client = new S3Client({
-    region: process.env.REGION!,
-    credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!
-    }
-});
+export async function GET(req: NextRequest) {
+    const { searchParams } = new URL(req.url);
+    const type = searchParams.get('type');
+    const id = searchParams.get('id');
+    const imageKey = searchParams.get('imageKey');
 
-async function getGetObjectSignedUrl(key: string): Promise<string> {
-    const bucketName = process.env.BUCKET;
-    const command = new GetObjectCommand({
-        Bucket: bucketName,
-        Key: key,
+    const s3Client = new S3Client({
+        region: process.env.REGION!,
+        credentials: {
+            accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!
+        }
     });
-    return getSignedUrl(s3Client, command, { expiresIn: 3600 });
-}
-
-export async function PUT(req: NextRequest) {
-    if (!process.env.OPTIMIZE_API_KEY) {
-        return NextResponse.json(
-            { error: "server misconfiguration" },
-            { status: 500 }
-        );
-    }
-
-    const cookieStore = await cookies();
-    const token = cookieStore.get("token")?.value;
-    const userData = getUserFromToken(token || "");
-
-    if (!userData) {
-        return NextResponse.json(
-            { error: "unauthorized: cannot find user" },
-            { status: 401 },
-        );
-    }
-
-    let body: unknown;
-    try {
-        body = await req.json();
-    } catch {
-        return NextResponse.json(
-            { error: "invalid JSON" },
-            { status: 400 },
-        );
-    }
-
-    const parsed = fetchImgSchema.safeParse(body);
-    if (!parsed.success) {
-        return NextResponse.json(
-            { error: "validation error", details: parsed.error.format() },
-            { status: 400 },
-        );
-    }
-
-    const { imgID, imageKey } = parsed.data;
 
     try {
-        const [user, image] = await Promise.all([
-            db.user.findUnique({
-                where: { email: userData.email },
-                select: { id: true, email: true }
-            }),
-            db.noteDetails.findUnique({
-                where: { id: imgID },
-                select: {
-                    id: true,
-                    imgName: true,
-                    type: true,
-                    imageKey: true,
-                    uploadedBy: true
+
+        async function getSignedImageUrl(key: string): Promise<string> {
+            const command = new GetObjectCommand({
+                Bucket: process.env.BUCKET,
+                Key: key
+            });
+            return await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+        }
+
+        if (id) {
+            const image = await db.noteDetails.findUnique({
+                where: { id },
+                include: {
+                    uploader: {
+                        select: {
+                            email: true,
+                            displayName: true
+                        }
+                    }
                 }
-            })
-        ]);
+            });
 
-        if (!user) {
+            if (!image) {
+                return NextResponse.json(
+                    { error: "Image not found" },
+                    { status: 404 }
+                );
+            }
+
+            if (image.type === 'private') {
+                if (!imageKey) {
+                    return NextResponse.json(
+                        { error: "Image key required for private images" },
+                        { status: 401 }
+                    );
+                }
+
+                const isValidKey = await bcrypt.compare(imageKey, image.imageKey);
+                if (!isValidKey) {
+                    return NextResponse.json(
+                        { error: "Invalid image key" },
+                        { status: 403 }
+                    );
+                }
+            }
+
+            const imageUrl = `https://${process.env.BUCKET}.s3.${process.env.REGION}.amazonaws.com/${image.uploader.displayName}/${image.type}/${image.imgName}`;
+
+            return NextResponse.json({
+                image: {
+                    id: image.id,
+                    imgName: image.imgName,
+                    type: image.type,
+                    imageSize: image.imageSize,
+                    createdAt: image.createdAt,
+                    uploadedBy: image.uploader.email,
+                    imageUrl
+                }
+            });
+        }
+
+        if (type === 'public') {
+            const images = await db.noteDetails.findMany({
+                where: { type: 'public' },
+                include: {
+                    uploader: {
+                        select: {
+                            email: true,
+                            displayName: true
+                        }
+                    }
+                },
+                orderBy: {
+                    createdAt: 'desc'
+                },
+                take: 50
+            });
+            const imageUrl = await getSignedImageUrl(`${images[0].uploader.displayName}/${images[0].type}/${images[0].imgName}`);
+
+            const imagesWithUrls = images.map(image => ({
+                id: image.id,
+                imgName: image.imgName,
+                type: image.type,
+                imageSize: image.imageSize,
+                createdAt: image.createdAt,
+                uploadedBy: image.uploader.email,
+                imageUrl: imageUrl
+            }));
+
+            return NextResponse.json({ images: imagesWithUrls });
+        }
+
+        const cookieStore = await cookies();
+        const token = cookieStore.get("token")?.value;
+        const userData = getUserFromToken(token || "");
+
+        if (!userData) {
             return NextResponse.json(
-                { error: "user not found" },
-                { status: 401 },
+                { error: "Unauthorized" },
+                { status: 401 }
             );
         }
 
-        if (!image) {
+        const user = await db.user.findUnique({
+            where: { email: userData.email }
+        });
+
+        if (!user) {
             return NextResponse.json(
-                { error: "image not found" },
+                { error: "User not found" },
                 { status: 404 }
             );
         }
 
-        if (image.type === "private") {
-            if (!imageKey) {
-                return NextResponse.json(
-                    { error: "image key required for private images" },
-                    { status: 400 }
-                );
-            }
-            
-            const isValidKey = await bcrypt.compare(imageKey, image.imageKey);
-            if (!isValidKey) {
-                return NextResponse.json(
-                    { error: "incorrect image key" },
-                    { status: 403 }
-                );
-            }
-        }
-
-        const signedUrl = await getGetObjectSignedUrl(image.imgName);
-
-        await db.fetchDetails.create({
-            data: {
-                type: image.type,
-                accessedBy: user.id,
-                imageId: image.id
+        const userImages = await db.noteDetails.findMany({
+            where: { uploadedBy: user.id },
+            include: {
+                uploader: {
+                    select: {
+                        email: true,
+                        displayName: true
+                    }
+                }
+            },
+            orderBy: {
+                createdAt: 'desc'
             }
         });
+        const imageUrl = await getSignedImageUrl(`${userImages[0].uploader.displayName}/${userImages[0].type}/${userImages[0].imgName}`);
 
-        return NextResponse.json(
-            {
-                message: "image fetched successfully",
-                signedUrl
-            },
-            { status: 200 }
-        );
+        const imagesWithUrls = userImages.map(image => ({
+            id: image.id,
+            imgName: image.imgName,
+            type: image.type,
+            imageSize: image.imageSize,
+            createdAt: image.createdAt,
+            uploadedBy: image.uploader.email,
+            imageUrl: imageUrl
+        }));
+
+        return NextResponse.json({ images: imagesWithUrls });
 
     } catch (err: unknown) {
+        console.error("Fetch error:", err);
+
         if (err && typeof err === "object") {
             const prismaErr = err as Prisma.PrismaClientKnownRequestError;
-            
-            if (prismaErr.code === "P2002") {
-                return NextResponse.json(
-                    { error: "duplicate fetch attempt" },
-                    { status: 409 },
-                );
-            }
-            
+
             if (prismaErr.code === "P2025") {
                 return NextResponse.json(
-                    { error: "resource not found" },
-                    { status: 404 },
+                    { error: "Resource not found" },
+                    { status: 404 }
                 );
             }
         }
 
-        console.error("Image fetch error:", err);
         return NextResponse.json(
-            { error: "internal server error" },
-            { status: 500 },
+            { error: "Internal server error" },
+            { status: 500 }
         );
     }
 }

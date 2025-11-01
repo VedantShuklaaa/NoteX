@@ -48,3 +48,6 @@ next-env.d.ts
 
 #user access key awsS3
 *.csv
+
+#dotenv
+.env*
