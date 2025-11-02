@@ -94,9 +94,10 @@ const noteShare: React.FC = () => {
         setUploading(true);
         setUploadStatus(null);
 
-        try {
-            const fileName = file.name.replace(/\.[^/.]+$/, '');
+        let recordId: string | null = null;
 
+        try {
+            // Step 1: Get signed URL and create DB record
             const response = await axios.put('/api/uploadIMG', {
                 type,
                 imgName: file.name.split('.')[0],
@@ -109,21 +110,24 @@ const noteShare: React.FC = () => {
                 throw new Error(response.data.error || 'Failed to get upload URL');
             }
 
-            const data: UploadResponse = response.data;
+            const { signedUrl, dbRecord } = response.data;
+            recordId = dbRecord.id; // Save for potential rollback
 
-            const uploadResponse = await axios.put(data.signedUrl, file, {
+            // Step 2: Upload to S3
+            const uploadResponse = await axios.put(signedUrl, file, {
                 headers: {
                     "Content-Type": file.type
                 }
             });
 
             if (uploadResponse.status !== 200) {
-                throw new Error('Failed to upload file to storage');
+                throw new Error('Failed to upload file to S3');
             }
 
+            // Success!
             setUploadStatus({
                 type: 'success',
-                message: `Upload successful! Image ID: ${data.dbRecord.id}`
+                message: `Upload successful! Image ID: ${dbRecord.id}`
             });
 
             setTimeout(() => {
@@ -132,6 +136,18 @@ const noteShare: React.FC = () => {
 
         } catch (error) {
             console.error('Upload error:', error);
+
+            // Rollback: Delete DB record if it was created
+            if (recordId) {
+                try {
+                    console.log('Rolling back DB record:', recordId);
+                    await axios.delete(`/api/rollbackUpload?id=${recordId}`);
+                    console.log('Rollback successful');
+                } catch (rollbackError) {
+                    console.error('Rollback failed:', rollbackError);
+                }
+            }
+
             setUploadStatus({
                 type: 'error',
                 message: error instanceof Error ? error.message : 'Upload failed. Please try again.'
@@ -157,7 +173,7 @@ const noteShare: React.FC = () => {
 
     if (uploading) {
         return (
-            <Loader/>
+            <Loader />
         );
     }
 
@@ -279,7 +295,7 @@ const noteShare: React.FC = () => {
                         <button
                             onClick={uploadFile}
                             disabled={uploading || (type === 'private' && !imageKey)}
-                            className={`relative w-full py-3 rounded-2xl font-semibold transition-all ${uploading || (type === 'private' && !imageKey)
+                            className={`relative w-full py-3 rounded-2xl cursor-pointer font-semibold transition-all ${uploading || (type === 'private' && !imageKey)
                                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                 : 'bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 shadow-lg'
                                 }`}

@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
                     uploader: {
                         select: {
                             email: true,
-                            displayName: true
+                            displayName: true,
                         }
                     }
                 },
@@ -100,17 +100,23 @@ export async function GET(req: NextRequest) {
                 },
                 take: 50
             });
-            const imageUrl = await getSignedImageUrl(`${images[0].uploader.displayName}/${images[0].type}/${images[0].imgName}`);
-
-            const imagesWithUrls = images.map(image => ({
-                id: image.id,
-                imgName: image.imgName,
-                type: image.type,
-                imageSize: image.imageSize,
-                createdAt: image.createdAt,
-                uploadedBy: image.uploader.email,
-                imageUrl: imageUrl
-            }));
+            const imagesWithUrls = await Promise.all(
+                images.map(async (image) => {
+                    const signedUrl = await getSignedImageUrl(
+                        `${image.uploader.displayName}/${image.type}/${image.imgName}`
+                    );
+                    
+                    return {
+                        id: image.id,
+                        imgName: image.imgName,
+                        type: image.type,
+                        imageSize: image.imageSize,
+                        createdAt: image.createdAt.toISOString(),
+                        uploadedBy: image.uploader.email,
+                        imageUrl: signedUrl // This is now a string for each image
+                    };
+                })
+            );
 
             return NextResponse.json({ images: imagesWithUrls });
         }
@@ -151,7 +157,13 @@ export async function GET(req: NextRequest) {
                 createdAt: 'desc'
             }
         });
-        const imageUrl = await getSignedImageUrl(`${userImages[0].uploader.displayName}/${userImages[0].type}/${userImages[0].imgName}`);
+        const imagesToSign = userImages.slice(0, 51);
+        const imageUrl = await Promise.all(
+            imagesToSign.map(async img => {
+                return await getSignedImageUrl(`${img.uploader.displayName}/${img.type}/${img.imgName}`);
+            })
+        );
+        console.log("signed urls: ", imageUrl);
 
         const imagesWithUrls = userImages.map(image => ({
             id: image.id,

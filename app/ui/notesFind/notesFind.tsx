@@ -35,11 +35,10 @@ export default function NotesFind() {
                 params: { type: 'public' }
             });
 
-            if (response.data.images) {
+            if (response.data.images && Array.isArray(response.data.images)) {
                 setImages(response.data.images);
-                console.log(response.data.images);
+                console.log('Loaded images:', response.data.images.length);
             }
-
         } catch (err) {
             console.error('Error fetching images:', err);
             setError('Failed to load images');
@@ -94,7 +93,7 @@ export default function NotesFind() {
 
     if (loading && images.length === 0) {
         return (
-            <Loader/>
+            <Loader />
         );
     }
 
@@ -154,7 +153,7 @@ export default function NotesFind() {
 
                     {loading ? (
                         <div className="flex items-center justify-center h-full">
-                            <Loader/>
+                            <Loader />
                         </div>
                     ) : images.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400">

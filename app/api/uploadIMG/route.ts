@@ -50,7 +50,6 @@ async function getPutObjectSignedUrl(
     return signedUrl;
 }
 
-
 export async function PUT(req: NextRequest) {
     if (!process.env.OPTIMIZE_API_KEY) {
         return NextResponse.json(
@@ -124,7 +123,6 @@ export async function PUT(req: NextRequest) {
             ? await bcrypt.hash(imageKey, SALT_ROUNDS)
             : "publicIMG";
 
-
         const [signedUrl, dbRecord] = await Promise.all([
             getPutObjectSignedUrl(user.displayName, type, uniqueImgName, contentType),
             db.noteDetails.create({
@@ -145,16 +143,16 @@ export async function PUT(req: NextRequest) {
             })
         ]);
 
-        console.log("signed url: ", signedUrl.substring(0, 100), "...")
-        console.log("dbRecord: ", dbRecord)
+        console.log("Signed URL:", signedUrl.substring(0, 100), "...");
+        console.log("DB Record:", dbRecord);
+
         return NextResponse.json(
             {
                 message: "image upload prepared successfully",
                 signedUrl,
                 dbRecord
-
             },
-            { status: 200, }
+            { status: 200 }
         );
 
     } catch (err: unknown) {
