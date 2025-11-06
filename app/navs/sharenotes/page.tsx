@@ -6,7 +6,6 @@ export default function sharenotes() {
     return(
         <div className="h-[120vh] lg:h-[100vh] bg-[var(--background)]">
             <GradientBackground/>
-            <GradientBackground/>
             <NoteShare/>
         </div>
     )

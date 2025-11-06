@@ -100,7 +100,7 @@ export default function Signup() {
     };
 
     return (
-        <div className="absolute shadow-input mx-auto w-[90vw] md:w-full max-w-md p-4 rounded-2xl md:p-8 border-black/10 dark:border-white/20 bg-transparent backdrop-blur-[200px] dark:backdrop-blur-2xl dark:shadow-[0_20px_60px_rgba(107,91,205,0.4)]">
+        <div className="absolute font-[roboto_Condensed] shadow-input mx-auto w-[90vw] md:w-full max-w-md p-4 rounded-xl md:p-8 border-black/10 dark:border-white/20 bg-transparent backdrop-blur-[200px] dark:backdrop-blur-2xl dark:shadow-[0_20px_60px_rgba(107,91,205,0.4)]">
             <h2 className="text-xl font-bold text-neutral-800 dark:text-neutral-200">
                 Join NoteX
             </h2>

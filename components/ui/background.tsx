@@ -1,7 +1,7 @@
 "use client";
 import React from 'react';
 import { motion } from 'framer-motion';
-import MotionDiv from './motionGradients';
+import Image from 'next/image';
 
 interface GradientBackgroundProps {
     className?: string;
@@ -11,11 +11,22 @@ const GradientBackground: React.FC<GradientBackgroundProps> = ({
     className = ''
 }) => {
     return (
-        <motion.div className={`fixed inset-0 min-h-screen flex items-center justify-center ${className}`}>
-            <MotionDiv className='left-220 top-10 h-80 w-80' variant='ocean'/>
-            <MotionDiv className='left-50 top-40 h-80 w-80' variant='sunset'/>
-            <MotionDiv className='left-140 bottom-30 h-120 w-120' variant='forest'/>
-            <MotionDiv className='right-60 h-100 w-100 bg-gradient-to-br from-green-400 via-emerald-400 to-lime-200' variant='custom'/>
+        <motion.div className={`fixed inset-0 min-h-screen blur-[5px] flex items-center justify-center ${className}`}>
+            <Image
+                src="/bg-1.png"
+                priority
+                fill
+                alt='background image'
+                className='xl:h-[100vh] xl:w-[100vw] block dark:hidden'
+            />
+
+            <Image
+                src="/bg-1dark.png"
+                priority
+                fill
+                alt='background image'
+                className='xl:h-[100vh] xl:w-[100vw] hidden dark:block'
+            />
         </motion.div>
     )
 }

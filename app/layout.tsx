@@ -5,6 +5,8 @@ import { ModeToggle } from "@/components/ui/themeToggle/ModeToggle";
 import { ThemeProvider } from "@/components/theme-provider";
 import  NavigationBar  from "@/app/ui/navbar/navbar";
 import Footer from "./ui/footer/footer";
+import { Inter } from "next/font/google";
+import { Roboto_Condensed } from "next/font/google";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,6 +17,12 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
+const roboto_Condensed = Roboto_Condensed({
+  variable: "--font-Roboto_Condensed",
+  weight: "500",
+  subsets: ["latin"]
+})
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -29,7 +37,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${roboto_Condensed.variable} antialiased`}
       >
         <ThemeProvider
             attribute="class"

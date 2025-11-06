@@ -6,7 +6,6 @@ export default function howtouse() {
     return(
         <div className="h-[100vh] bg-[var(--background)]">
             <GradientBackground/>
-            <GradientBackground/>
             <HowUseTo/>
         </div>
     )

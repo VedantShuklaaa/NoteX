@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Search, Calendar, User, Hash, Lock, Unlock, Image as ImageIcon, AlertCircle } from "lucide-react";
+import { X } from "lucide-react";
 import Loader from "@/components/ui/loader";
 
 interface ImageRecord {
@@ -21,7 +22,6 @@ export default function NotesFind() {
     const [searchId, setSearchId] = useState<string>("");
     const [imageKey, setImageKey] = useState<string>("");
     const [searchResult, setSearchResult] = useState<ImageRecord | null>(null);
-
 
     useEffect(() => {
         fetchPublicImages();
@@ -98,8 +98,8 @@ export default function NotesFind() {
     }
 
     return (
-        <div className="absolute top-0 h-[110vh] w-full flex items-center justify-center z-10 p-4">
-            <div className="h-[90vh] w-[95vw] flex flex-col gap-6 rounded-2xl border border-black/10 dark:border-white/20 bg-transparent backdrop-blur-[100px] dark:backdrop-blur-2xl dark:shadow-[0_20px_60px_rgba(107,91,205,0.4)] p-6 overflow-hidden">
+        <div className="absolute top-0 h-[110vh] w-full flex items-center justify-center z-10 p-4 font-[roboto_Condensed]">
+            <div className="h-[90vh] w-[95vw] flex flex-col gap-6 rounded-xl border border-black/10 dark:border-white/20 bg-transparent backdrop-blur-[100px] dark:backdrop-blur-2xl dark:shadow-[0_20px_60px_rgba(107,91,205,0.4)] p-6 overflow-hidden">
 
                 <div className="flex flex-col gap-4">
                     <h1 className="text-3xl font-bold text-gray-800 dark:text-white flex items-center gap-3">
@@ -113,18 +113,18 @@ export default function NotesFind() {
                             placeholder="Enter Image ID"
                             value={searchId}
                             onChange={(e) => setSearchId(e.target.value)}
-                            className="flex-1 min-w-[200px] px-4 py-3 border border-gray-300 dark:border-white/20 rounded-2xl bg-white/50 dark:bg-black/20 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-gray-800 dark:text-white"
+                            className="flex-1 min-w-[200px] px-4 py-3 border border-gray-300 dark:border-white/20 rounded-xl bg-white/50 dark:bg-black/20 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-gray-800 dark:text-white"
                         />
                         <input
                             type="password"
                             placeholder="Image Key (if private)"
                             value={imageKey}
                             onChange={(e) => setImageKey(e.target.value)}
-                            className="flex-1 min-w-[200px] px-4 py-3 border border-gray-300 dark:border-white/20 rounded-2xl bg-white/50 dark:bg-black/20 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-gray-800 dark:text-white"
+                            className="flex-1 min-w-[200px] px-4 py-3 border border-gray-300 dark:border-white/20 rounded-xl bg-white/50 dark:bg-black/20 backdrop-blur-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-gray-800 dark:text-white"
                         />
                         <button
                             onClick={searchImageById}
-                            className="px-6 py-3 bg-indigo-500 text-white rounded-2xl font-semibold hover:bg-indigo-600 transition-all flex items-center gap-2"
+                            className="px-6 py-3 bg-indigo-500 text-white rounded-xl cursor-pointer font-semibold hover:bg-indigo-600 transition-all flex items-center gap-2"
                         >
                             <Search className="w-5 h-5" />
                             Search
@@ -148,7 +148,7 @@ export default function NotesFind() {
                 )}
 
 
-                <div className="flex-1 overflow-y-auto rounded-2xl bg-white/50 dark:bg-black/50 backdrop-blur-2xl p-2">
+                <div className="flex-1 overflow-y-auto rounded-xl bg-white/50 dark:bg-black/50 backdrop-blur-2xl p-2">
                     <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Public Images</h2>
 
                     {loading ? (
@@ -176,6 +176,7 @@ export default function NotesFind() {
 
 const ImageCard: React.FC<{ image: ImageRecord }> = ({ image }) => {
     const [imageLoaded, setImageLoaded] = useState(false);
+    const [fullImage, setFullImage] = useState<boolean>(false);
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('en-US', {
@@ -189,68 +190,155 @@ const ImageCard: React.FC<{ image: ImageRecord }> = ({ image }) => {
         return (bytes / 1024 / 1024).toFixed(2) + ' MB';
     };
 
-    return (
-        <div className="border rounded-2xl border-black/10 dark:border-white/20 bg-white/50 dark:bg-black/20 backdrop-blur-xl cursor-pointer overflow-hidden hover:scale-102 transition-transform duration-300 hover:shadow-[0_20px_60px_rgba(107,91,205,0.4)]">
+    const downloadImage = async (url: string, filename: string) => {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const urlBlob = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = urlBlob;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(urlBlob);
+    };
 
-            <div className="relative h-48 w-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
-                {image.imageUrl ? (
-                    <>
-                        {!imageLoaded && (
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+    return (
+        <div className="border rounded-xl border-black/10 dark:border-white/20 bg-white/50 dark:bg-black/20 backdrop-blur-xl cursor-pointer overflow-hidden hover:scale-102 transition-transform duration-300 hover:shadow-[0_20px_60px_rgba(107,91,205,0.4)]">
+            {fullImage ? (
+                <>
+                    <div
+                        className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+                        onClick={() => setFullImage(false)}
+                    >
+                        <div
+                            className="relative max-w-7xl max-h-[90vh] w-full"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <button
+                                onClick={() => setFullImage(false)}
+                                className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors"
+                            >
+                                <X className="w-8 h-8" />
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (image.imageUrl && image.imgName) {
+                                        downloadImage(image.imageUrl, image.imgName);
+                                    }
+                                }}
+                                disabled={!image.imageUrl || !image.imgName}
+                                className={`mt-2 px-4 py-2 rounded-md font-medium ${!image.imageUrl || !image.imgName
+                                        ? 'bg-gray-300 text-gray-700 cursor-not-allowed'
+                                        : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                                    }`}
+                            >
+                                Download
+                            </button>
+
+                            <img
+                                src={image.imageUrl}
+                                alt={image.imgName}
+                                className="w-full h-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                            />
+
+                            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 rounded-b-lg">
+                                <h3 className="text-white text-xl font-bold mb-2">{image.imgName}</h3>
+                                <div className="flex gap-4 text-white/80 text-sm">
+                                    <span className="flex items-center gap-1">
+                                        <Calendar className="w-4 h-4" />
+                                        {formatDate(image.createdAt)}
+                                    </span>
+                                    <span>{formatSize(image.imageSize)}</span>
+                                    <span className="flex items-center gap-1">
+                                        {image.type === 'private' ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
+                                        {image.type}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            ) : (
+                <>
+                    <div className="relative h-48 w-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                        {image.imageUrl ? (
+                            <>
+                                {!imageLoaded && (
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+                                    </div>
+                                )}
+                                <button
+                                    onClick={() => {
+                                        if (image.imageUrl && image.imgName) {
+                                            downloadImage(image.imageUrl, image.imgName);
+                                        }
+                                    }}
+                                    disabled={!image.imageUrl || !image.imgName}
+                                    className={`mt-2 px-4 py-2 rounded-md font-medium ${!image.imageUrl || !image.imgName
+                                            ? 'bg-gray-300 text-gray-700 cursor-not-allowed'
+                                            : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                                        }`}
+                                >
+                                    Download
+                                </button>
+                                <img
+                                    src={image.imageUrl}
+                                    alt={image.imgName}
+                                    className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+                                    onLoad={() => setImageLoaded(true)}
+                                    onError={() => setImageLoaded(true)}
+                                    onClick={() => setFullImage(true)}
+                                />
+                            </>
+                        ) : (
+                            <div className="flex items-center justify-center h-full">
+                                <ImageIcon className="w-12 h-12 text-gray-400" />
                             </div>
                         )}
-                        <img
-                            src={image.imageUrl}
-                            alt={image.imgName}
-                            className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-                            onLoad={() => setImageLoaded(true)}
-                            onError={() => setImageLoaded(true)}
-                        />
-                    </>
-                ) : (
-                    <div className="flex items-center justify-center h-full">
-                        <ImageIcon className="w-12 h-12 text-gray-400" />
+
+
+                        <div className={`absolute top-2 right-2 px-3 py-1 rounded-full flex items-center gap-2 ${image.type === 'private'
+                            ? 'bg-indigo-500 text-white'
+                            : 'bg-green-500 text-white'
+                            }`}>
+                            {image.type === 'private' ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
+                            <span className="text-xs font-medium capitalize">{image.type}</span>
+                        </div>
                     </div>
-                )}
 
 
-                <div className={`absolute top-2 right-2 px-3 py-1 rounded-full flex items-center gap-2 ${image.type === 'private'
-                    ? 'bg-indigo-500 text-white'
-                    : 'bg-green-500 text-white'
-                    }`}>
-                    {image.type === 'private' ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
-                    <span className="text-xs font-medium capitalize">{image.type}</span>
-                </div>
-            </div>
+                    <div className="p-4 space-y-2">
+                        <div className="text-sm font-semibold text-gray-800 dark:text-white truncate" title={image.imgName}>
+                            {image.imgName}
+                        </div>
 
+                        <div className="flex gap-2">
+                            <div className="flex-1 px-2 py-1 border border-black/10 dark:border-white/20 rounded-xl text-xs text-gray-600 dark:text-gray-300 flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {formatDate(image.createdAt)}
+                            </div>
+                            <div className="px-2 py-1 border border-black/10 dark:border-white/20 rounded-xl text-xs text-gray-600 dark:text-gray-300">
+                                {formatSize(image.imageSize)}
+                            </div>
+                        </div>
 
-            <div className="p-4 space-y-2">
-                <div className="text-sm font-semibold text-gray-800 dark:text-white truncate" title={image.imgName}>
-                    {image.imgName}
-                </div>
-
-                <div className="flex gap-2">
-                    <div className="flex-1 px-2 py-1 border border-black/10 dark:border-white/20 rounded-2xl text-xs text-gray-600 dark:text-gray-300 flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {formatDate(image.createdAt)}
+                        <div className="space-y-1">
+                            <div className="px-2 py-1 border border-black/10 dark:border-white/20 rounded-xl text-xs text-gray-600 dark:text-gray-300 flex items-center gap-1 truncate" title={image.id}>
+                                <Hash className="w-3 h-3 flex-shrink-0" />
+                                <span className="truncate">{image.id}</span>
+                            </div>
+                            <div className="px-2 py-1 border border-black/10 dark:border-white/20 rounded-xl text-xs text-gray-600 dark:text-gray-300 flex items-center gap-1 truncate" title={image.uploadedBy}>
+                                <User className="w-3 h-3 flex-shrink-0" />
+                                <span className="truncate">{image.uploadedBy}</span>
+                            </div>
+                        </div>
                     </div>
-                    <div className="px-2 py-1 border border-black/10 dark:border-white/20 rounded-2xl text-xs text-gray-600 dark:text-gray-300">
-                        {formatSize(image.imageSize)}
-                    </div>
-                </div>
+                </>
+            )}
 
-                <div className="space-y-1">
-                    <div className="px-2 py-1 border border-black/10 dark:border-white/20 rounded-2xl text-xs text-gray-600 dark:text-gray-300 flex items-center gap-1 truncate" title={image.id}>
-                        <Hash className="w-3 h-3 flex-shrink-0" />
-                        <span className="truncate">{image.id}</span>
-                    </div>
-                    <div className="px-2 py-1 border border-black/10 dark:border-white/20 rounded-2xl text-xs text-gray-600 dark:text-gray-300 flex items-center gap-1 truncate" title={image.uploadedBy}>
-                        <User className="w-3 h-3 flex-shrink-0" />
-                        <span className="truncate">{image.uploadedBy}</span>
-                    </div>
-                </div>
-            </div>
+
         </div>
     );
 };

@@ -7,7 +7,6 @@ export default function SignupPage() {
   return (
     <div className='h-[100vh] w-full flex items-center justify-center bg-[var(--background)]'>
       <GradientBackground/>
-      <GradientBackground/>
       <Signup/>
     </div>
   );

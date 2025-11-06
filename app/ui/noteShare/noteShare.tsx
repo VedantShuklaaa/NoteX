@@ -97,7 +97,6 @@ const noteShare: React.FC = () => {
         let recordId: string | null = null;
 
         try {
-            // Step 1: Get signed URL and create DB record
             const response = await axios.put('/api/uploadIMG', {
                 type,
                 imgName: file.name.split('.')[0],
@@ -111,9 +110,8 @@ const noteShare: React.FC = () => {
             }
 
             const { signedUrl, dbRecord } = response.data;
-            recordId = dbRecord.id; // Save for potential rollback
+            recordId = dbRecord.id; 
 
-            // Step 2: Upload to S3
             const uploadResponse = await axios.put(signedUrl, file, {
                 headers: {
                     "Content-Type": file.type
@@ -124,7 +122,6 @@ const noteShare: React.FC = () => {
                 throw new Error('Failed to upload file to S3');
             }
 
-            // Success!
             setUploadStatus({
                 type: 'success',
                 message: `Upload successful! Image ID: ${dbRecord.id}`
@@ -137,7 +134,6 @@ const noteShare: React.FC = () => {
         } catch (error) {
             console.error('Upload error:', error);
 
-            // Rollback: Delete DB record if it was created
             if (recordId) {
                 try {
                     console.log('Rolling back DB record:', recordId);
@@ -178,11 +174,11 @@ const noteShare: React.FC = () => {
     }
 
     return (
-        <div className="h-[100vh] w-[80vw] mx-auto flex items-center justify-center z-11">
-            <div className="border rounded-2xl border-black/10 dark:border-white/20 bg-transparent backdrop-blur-[100px] dark:backdrop-blur-2xl dark:shadow-[0_20px_60px_rgba(107,91,205,0.4)] p-8 h-[80vh] w-full max-w-lg flex flex-col items-center justify-center">
+        <div className="h-[110vh] w-[80vw] mx-auto flex items-center justify-center z-11 font-[roboto_Condensed]">
+            <div className="border rounded-xl border-black/10 dark:border-white/20 bg-transparent backdrop-blur-[100px] dark:backdrop-blur-2xl dark:shadow-[0_20px_60px_rgba(107,91,205,0.4)] p-8 h-[85vh] w-full max-w-lg flex flex-col items-center justify-center">
                 <div className="flex items-center justify-center gap-3 mb-6 xl:mb-15">
                     <FileImage className="w-8 h-8 text-indigo-600" />
-                    <h1 className="text-3xl w-50 xl:w-80 xl:text-5xl font-bold text-gray-800">Image Upload</h1>
+                    <h1 className="text-3xl w-50 xl:w-80 xl:text-5xl font-bold text-gray-800 dark:text-white text-center">Image Upload</h1>
                 </div>
 
                 <div className="mb-6 xl:mb-10">
@@ -192,7 +188,7 @@ const noteShare: React.FC = () => {
                     <div className="flex gap-3">
                         <button
                             onClick={() => setType('public')}
-                            className={`lg:h-12 md:w-48 lg:w-45 flex-1 py-3 px-4 rounded-2xl font-medium transition-all flex items-center justify-center gap-2 ${type === 'public'
+                            className={`lg:h-12 md:w-48 lg:w-45 flex-1 py-3 px-4 rounded-xl font-medium transition-all flex items-center justify-center gap-2 ${type === 'public'
                                 ? 'bg-[#475ee0] text-white shadow-md'
                                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                 }`}
@@ -202,7 +198,7 @@ const noteShare: React.FC = () => {
                         </button>
                         <button
                             onClick={() => setType('private')}
-                            className={`lg:h-12 md:w-48 lg:w-45 flex-1 py-3 px-4 rounded-2xl font-medium transition-all flex items-center justify-center gap-2 ${type === 'private'
+                            className={`lg:h-12 md:w-48 lg:w-45 flex-1 py-3 px-4 rounded-xl font-medium transition-all flex items-center justify-center gap-2 ${type === 'private'
                                 ? 'bg-indigo-500 text-white shadow-md'
                                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                 }`}
@@ -215,7 +211,7 @@ const noteShare: React.FC = () => {
 
                 {type === 'private' && (
                     <div className="mb-6">
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        <label className="block text-sm font-semibold text-gray-700 dark:text-white mb-2">
                             Image Key (Password)
                         </label>
                         <input
@@ -225,7 +221,7 @@ const noteShare: React.FC = () => {
                             placeholder="Enter a key to protect your image"
                             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
                         />
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-gray-500 dark:text-white mt-1">
                             Remember this key - you'll need it to access the image later
                         </p>
                     </div>
@@ -236,7 +232,7 @@ const noteShare: React.FC = () => {
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
                         onDrop={handleDrop}
-                        className={`h-80 md:w-100 border-3 border-dashed rounded-2xl p-12 text-center transition-all cursor-pointer ${isDragging
+                        className={`h-80 md:w-100 border-3 border-dashed rounded-xl p-12 text-center transition-all cursor-pointer ${isDragging
                             ? 'border-indigo-500 bg-indigo-50 scale-105'
                             : 'border-gray-300 bg-gray-50 hover:border-indigo-400 hover:bg-indigo-50'
                             }`}
@@ -261,7 +257,7 @@ const noteShare: React.FC = () => {
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        <div className="relative rounded-2xl overflow-hidden bg-gray-100 shadow-lg">
+                        <div className="relative rounded-xl overflow-hidden bg-gray-100 shadow-lg">
                             <img
                                 src={preview || ''}
                                 alt="Preview"
@@ -282,7 +278,7 @@ const noteShare: React.FC = () => {
                             )}
                         </div>
 
-                        <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
+                        <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                             <p className="text-sm font-medium text-gray-700 truncate mb-1">
                                 {file.name}
                             </p>
@@ -295,7 +291,7 @@ const noteShare: React.FC = () => {
                         <button
                             onClick={uploadFile}
                             disabled={uploading || (type === 'private' && !imageKey)}
-                            className={`relative w-full py-3 rounded-2xl cursor-pointer font-semibold transition-all ${uploading || (type === 'private' && !imageKey)
+                            className={`relative w-full py-3 rounded-xl cursor-pointer font-semibold transition-all ${uploading || (type === 'private' && !imageKey)
                                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                 : 'bg-indigo-500 text-white hover:bg-indigo-600 active:scale-95 shadow-lg'
                                 }`}

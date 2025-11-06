@@ -43,10 +43,9 @@ export default function NavigationBar() {
     },
     {
       name: "How to use",
-      href: "/navs/howtouse"
+      href: "#Hero2"
     },
   ];
-
 
   useEffect(() => {
     checkAuth();
@@ -72,8 +71,12 @@ export default function NavigationBar() {
 
   if (loading) {
     return (
-      <Loader/>
+      <Loader />
     );
+  }
+
+  const dashboard = () => {
+    router.push("/navs/auth/userDashboard");
   }
 
   const handleLogout = async () => {
@@ -95,16 +98,16 @@ export default function NavigationBar() {
 
 
   return (
-    <Navbar>
+    <Navbar className="font-[roboto_Condensed]">
       <NavBody>
         <NavbarLogo />
-        <NavItems items={navItems.map(({ name, href }) => ({ name, Link: href }))} />
+        <NavItems  items={navItems.map(({ name, href } ) => ({ name, Link: href }))} />
         <div className="relative z-20 flex flex-row items-center space-x-2">
           {loading ? (
             <div className="h-9 w-32 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700" />
           ) : isAuthenticated ? (
             <>
-              <span className="hidden md:block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              <span className="hidden md:flex xl:h-10 xl:w-22 p-2 items-center justify-center rounded-xl text-sm font-medium text-neutral-700 dark:text-neutral-300 cursor-pointer hover:bg-white/40" onClick={dashboard}>
                 {user?.displayName}
               </span>
               <NavbarButton
@@ -116,10 +119,10 @@ export default function NavigationBar() {
             </>
           ) : (
             <>
-              <NavbarButton variant="secondary" href="auth/login" className="rounded-[1rem]">
+              <NavbarButton variant="secondary" href="/navs/auth/login" className="rounded-[1rem]">
                 Login
               </NavbarButton>
-              <NavbarButton href="auth/signup" className="rounded-[1rem]">
+              <NavbarButton href="/navs/auth/signup" className="rounded-[1rem]">
                 Sign Up
               </NavbarButton>
             </>
@@ -149,25 +152,25 @@ export default function NavigationBar() {
           ))}
           <div className="mt-4 flex w-full flex-col items-center gap-2">
             {loading ? (
-              <div className="h-10 w-full animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700" />
+              <div className="h-10 w-full animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700 " />
             ) : isAuthenticated ? (
-              <>
-                <div className="w-full py-2 text-center text-sm font-medium text-neutral-700 dark:text-neutral-300">
+              <div className="flex gap-2">
+                <div className="w-full p-2 text-center text-sm font-medium text-neutral-700 dark:text-neutral-300 cursor-pointer" onClick={dashboard}>
                   Welcome, {user?.displayName}
                 </div>
                 <NavbarButton
                   onClick={handleLogout}
-                  className="w-full rounded-[1rem]"
+                  className="w-full rounded-[1rem] flex items-center justify-center"
                 >
                   Logout
                 </NavbarButton>
-              </>
+              </div>
             ) : (
               <>
-                <NavbarButton variant="secondary" href="navs/auth/login" className="w-full rounded-[1rem]">
+                <NavbarButton variant="secondary" href="/navs/auth/login" className="w-full rounded-xl">
                   Login
                 </NavbarButton>
-                <NavbarButton href="navs/auth/signup" className="w-full rounded-[1rem]">
+                <NavbarButton href="/navs/auth/signup" className="w-full rounded-xl">
                   Sign Up
                 </NavbarButton>
               </>

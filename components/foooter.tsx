@@ -2,7 +2,7 @@ import React from "react";
 
 export default function Foooter() {
     return (
-        <div className="absolute h-[25vh] w-[90vw] flex flex-col items-center justify-center border-t border-black/10 dark:border-white/15 rounded-t-3xl bg-transparent backdrop-blur-[100px] dark:backdrop-blur-2xl dark:shadow-[0_20px_60px_rgba(107,91,205,0.4)] z-10">
+        <div className="absolute h-[25vh] w-[95vw] flex flex-col items-center justify-center border-t border-black/10 dark:border-white/20 rounded-t-xl bg-transparent backdrop-blur-lg dark:shadow-[0_20px_60px_rgba(107,91,205,0.4)] z-9">
             <div className="h-[20vh] w-full">
 
             </div>

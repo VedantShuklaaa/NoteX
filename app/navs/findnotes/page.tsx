@@ -6,7 +6,6 @@ export default function findnotes() {
     return(
         <div className="h-[110vh] bg-[var(--background)]">
             <GradientBackground/>
-            <GradientBackground/>
             <NotesFind/>
         </div>
     )

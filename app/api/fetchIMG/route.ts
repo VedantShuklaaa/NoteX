@@ -23,13 +23,34 @@ export async function GET(req: NextRequest) {
     });
 
     try {
-
         async function getSignedImageUrl(key: string): Promise<string> {
             const command = new GetObjectCommand({
                 Bucket: process.env.BUCKET,
                 Key: key
             });
             return await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+        }
+
+        const cookieStore = await cookies();
+        const token = cookieStore.get("token")?.value;
+        const userData = getUserFromToken(token || "");
+
+        if (!userData) {
+            return NextResponse.json(
+                { error: "Unauthorized" },
+                { status: 401 }
+            );
+        }
+
+        const user = await db.user.findUnique({
+            where: { email: userData.email }
+        });
+
+        if (!user) {
+            return NextResponse.json(
+                { error: "User not found" },
+                { status: 404 }
+            );
         }
 
         if (id) {
@@ -69,7 +90,21 @@ export async function GET(req: NextRequest) {
                 }
             }
 
+            try {
+                await db.fetchDetails.create({
+                    data: {
+                        imageId: image.id,
+                        accessedBy: user.id,
+                        type: image.type
+                    }
+                });
+                console.log(`✅ Tracked fetch: Image ${image.id} by user ${user.email}`);
+            } catch (trackError) {
+                console.error('❌ Failed to track fetch:', trackError);
+            }
+
             const imageUrl = `https://${process.env.BUCKET}.s3.${process.env.REGION}.amazonaws.com/${image.uploader.displayName}/${image.type}/${image.imgName}`;
+
 
             return NextResponse.json({
                 image: {
@@ -113,34 +148,12 @@ export async function GET(req: NextRequest) {
                         imageSize: image.imageSize,
                         createdAt: image.createdAt.toISOString(),
                         uploadedBy: image.uploader.email,
-                        imageUrl: signedUrl // This is now a string for each image
+                        imageUrl: signedUrl 
                     };
                 })
             );
 
             return NextResponse.json({ images: imagesWithUrls });
-        }
-
-        const cookieStore = await cookies();
-        const token = cookieStore.get("token")?.value;
-        const userData = getUserFromToken(token || "");
-
-        if (!userData) {
-            return NextResponse.json(
-                { error: "Unauthorized" },
-                { status: 401 }
-            );
-        }
-
-        const user = await db.user.findUnique({
-            where: { email: userData.email }
-        });
-
-        if (!user) {
-            return NextResponse.json(
-                { error: "User not found" },
-                { status: 404 }
-            );
         }
 
         const userImages = await db.noteDetails.findMany({

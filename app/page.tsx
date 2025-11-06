@@ -5,11 +5,10 @@ import Hero2 from "./ui/hero2/hero2";
 export default function Home() {
 
   return (
-    <div className="h-[200vh] w-full flex flex-col justify-center bg-[var(--background)]">
+    <div className="h-[250vh] md:h-[225vh] lg:h-[220vh] xl:h-[200vh] w-full flex flex-col justify-center bg-[var(--background)] font-[roboto_Condensed]">
       <GradientBackground />
-      <Hero />
-      <GradientBackground />
-      <Hero2 />
+      <Hero/>
+      <Hero2/>
     </div >
   );
 }
