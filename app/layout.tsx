@@ -3,9 +3,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ModeToggle } from "@/components/ui/themeToggle/ModeToggle";
 import { ThemeProvider } from "@/components/theme-provider";
-import  NavigationBar  from "@/app/ui/navbar/navbar";
+import NavigationBar from "@/app/ui/navbar/navbar";
 import Footer from "./ui/footer/footer";
-import { Inter } from "next/font/google";
+import AuthSessionProvider from "@/app/ui/components/sessionProvider";
 import { Roboto_Condensed } from "next/font/google";
 
 const geistSans = Geist({
@@ -40,19 +40,21 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${roboto_Condensed.variable} antialiased`}
       >
         <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <NavigationBar/>
-        {children}
-        <div className="fixed z-10 bottom-4 right-4">
-          <ModeToggle />
-        </div>
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <NavigationBar />
+          <AuthSessionProvider>
+            {children}
+          </AuthSessionProvider>
+          <div className="fixed z-10 bottom-4 right-4">
+            <ModeToggle />
+          </div>
         </ThemeProvider>
         <div className="bg-[var(--background)]">
-          <Footer/>
+          <Footer />
         </div>
       </body>
     </html>

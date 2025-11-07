@@ -4,6 +4,8 @@ import { Upload, Search, Lock, Share2, Shield, Zap } from 'lucide-react';
 
 export default function Hero2() {
 
+
+
     const steps = [
         {
             icon: <Upload className="w-8 h-8" />,
@@ -47,8 +49,8 @@ export default function Hero2() {
     ];
 
     return (
-        <div className="absolute top-0 h-[150vh] md:h-[125vh] lg:h-[120vh] xl:h-[100vh] w-full flex items-center justify-center z-9" id="Hero2">
-            <div className="h-[140vh] md:h-[120vh] lg:h-[100vh] xl:h-[80vh] w-[95vw] py-12 sm:py-16 md:py-20 px-3 sm:px-4 md:px-6 lg:px-8 flex flex-col items-center justify-center mt-[200vh] rounded-xl border border-black/10 dark:border-white/20 bg-transparent backdrop-blur-lg dark:backdrop-blur-2xl dark:shadow-[0_20px_60px_rgba(107,91,205,0.4)]">
+        <div className="absolute top-0 h-[150vh] md:h-[125vh] lg:h-[120vh] xl:h-[100vh] w-full flex items-center justify-center z-9">
+            <div className="h-[140vh] md:h-[120vh] lg:h-[100vh] xl:h-[80vh] w-[95vw] py-12 sm:py-16 md:py-20 px-3 sm:px-4 md:px-6 lg:px-8 flex flex-col items-center justify-center mt-[200vh] rounded-xl border border-black/10 dark:border-white/20 bg-transparent backdrop-blur-lg dark:backdrop-blur-2xl dark:shadow-[0_20px_60px_rgba(107,91,205,0.4)]" id="Hero2">
                 <div className="max-w-7xl mx-auto">
                     <div className="text-center mb-8 sm:mb-12 md:mb-16">
                         <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-4 md:mb-6 px-2">
@@ -85,7 +87,7 @@ export default function Hero2() {
                                     <div className="hidden lg:block absolute top-12 left-[60%] w-full h-0.5 bg-gradient-to-r from-gray-300 to-transparent dark:from-gray-700 z-0" />
                                 )}
 
-                                <div className="relative bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 sm:hover:-translate-y-2 border border-gray-100 dark:border-gray-700 z-10">
+                                <div className="relative bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 shadow-lg cursor-pointer hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 sm:hover:-translate-y-2 border border-gray-100 dark:border-gray-700 z-10">
                                     <div className="absolute -top-3 -right-3 sm:-top-4 sm:-right-4 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-base sm:text-lg shadow-lg">
                                         {idx + 1}
                                     </div>

@@ -26,7 +26,9 @@ export default function NavigationBar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isloading, setIsLoading] = useState(false);
+
+  
 
   const navItems = [
     {
@@ -43,7 +45,7 @@ export default function NavigationBar() {
     },
     {
       name: "How to use",
-      href: "#Hero2"
+      href: "/#Hero2"
     },
   ];
 
@@ -65,22 +67,42 @@ export default function NavigationBar() {
       setIsAuthenticated(false);
       setUser(null);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  if (loading) {
+  useEffect(() => {
+    const navEntry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+    const isReload =
+      (performance as any).navigation?.type === 1 ||
+      navEntry?.type === 'reload';
+
+    if (isReload) {
+      setIsLoading(true);
+      setTimeout(() => setIsLoading(false), 1000);
+    }
+  }, []);
+
+
+  if (isloading) {
     return (
       <Loader />
     );
   }
 
+
   const dashboard = () => {
-    router.push("/navs/auth/userDashboard");
+    setIsLoading(true)
+    try {
+      router.push("/navs/auth/userDashboard");
+      setIsLoading(false)
+    } catch (err) {
+      console.log(err)
+    }
   }
 
   const handleLogout = async () => {
-    setLoading(true)
+    setIsLoading(true)
     try {
       await axios.post("/api/user/logout", {}, {
         withCredentials: true,
@@ -90,7 +112,7 @@ export default function NavigationBar() {
       setUser(null);
       setIsMenuOpen(false);
       router.push("/");
-      setLoading(false)
+      setIsLoading(false)
     } catch (error) {
       console.error("Logout error:", error);
     }
@@ -101,9 +123,9 @@ export default function NavigationBar() {
     <Navbar className="font-[roboto_Condensed]">
       <NavBody>
         <NavbarLogo />
-        <NavItems  items={navItems.map(({ name, href } ) => ({ name, Link: href }))} />
+        <NavItems items={navItems.map(({ name, href }) => ({ name, Link: href }))} />
         <div className="relative z-20 flex flex-row items-center space-x-2">
-          {loading ? (
+          {isloading ? (
             <div className="h-9 w-32 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700" />
           ) : isAuthenticated ? (
             <>
@@ -138,12 +160,12 @@ export default function NavigationBar() {
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           />
         </MobileNavHeader>
-        <MobileNavMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)}>
+        <MobileNavMenu isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} className="rounded-xl">
           {navItems.map((item, index) => (
             <Link
               key={index}
               href={item.href}
-              className="w-full py-2 text-lg font-medium text-black dark:text-white"
+              className="w-full py-2 text-lg font-medium text-black dark:text-white flex flex-col items-center justify-center"
               onClick={() => setIsMenuOpen(false)}
               prefetch={true}
             >
@@ -151,7 +173,7 @@ export default function NavigationBar() {
             </Link>
           ))}
           <div className="mt-4 flex w-full flex-col items-center gap-2">
-            {loading ? (
+            {isloading ? (
               <div className="h-10 w-full animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700 " />
             ) : isAuthenticated ? (
               <div className="flex gap-2">

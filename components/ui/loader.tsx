@@ -3,7 +3,7 @@ import styled from 'styled-components';
 
 const Loader = () => {
   return (
-    <StyledWrapper className='h-[100vh] w-full flex items-center justify-center bg-transparent backdrop-blur-lg'>
+    <StyledWrapper className='h-[100vh] w-full flex flex-col items-center justify-center gap-2 bg-transparent backdrop-blur-lg'>
       <div className="book">
         <div className="book__pg-shadow" />
         <div className="book__pg" />
@@ -11,6 +11,11 @@ const Loader = () => {
         <div className="book__pg book__pg--3" />
         <div className="book__pg book__pg--4" />
         <div className="book__pg book__pg--5" />
+      </div>
+      <div className=''>
+        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white mb-3 sm:mb-4 md:mb-6 px-2">
+          <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Loading....</span> 
+        </h2>
       </div>
     </StyledWrapper>
   );

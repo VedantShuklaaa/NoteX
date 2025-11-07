@@ -1,5 +1,6 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from "next/navigation";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -27,7 +28,19 @@ interface ErrorResponse {
 
 export default function Login() {
 
+    const { data: session, status } = useSession();
     const router = useRouter();
+
+    useEffect(() => {
+        if (session) {
+          router.push('/dashboard'); 
+        }
+      }, [session, router]);
+    
+      const handleGoogleSignIn = () => {
+        signIn('google', { callbackUrl: '/dashboard' });
+      };
+
     const [formData, setFormData] = useState<LoginFormData>({
         email: "",
         password: "",
@@ -97,7 +110,7 @@ export default function Login() {
     };
 
     return (
-        <div className="absolute font-[roboto_Condensed] shadow-input mx-auto w-[90vw] md:w-full max-w-md p-4 rounded-xl md:p-8 border-black/10 dark:border-white/20 bg-transparent backdrop-blur-[200px] dark:backdrop-blur-2xl dark:shadow-[0_20px_60px_rgba(107,91,205,0.4)]">
+        <div className="absolute font-[roboto_Condensed] shadow-input mx-auto w-[90vw] md:w-full max-w-md p-4 rounded-xl md:p-8 border-black/10 dark:border-white/20 bg-transparent backdrop-blur-lg dark:backdrop-blur-2xl dark:shadow-[0_20px_60px_rgba(107,91,205,0.4)]">
             <h2 className="text-xl font-bold text-neutral-800 dark:text-neutral-200">
                 Welcome to NoteX
             </h2>
@@ -175,7 +188,7 @@ export default function Login() {
                         className="group/btn shadow-input cursor-pointer relative flex h-10 w-full items-center justify-start space-x-2 rounded-xl bg-gray-50 px-4 font-medium text-black dark:bg-zinc-900 dark:shadow-[0px_0px_1px_1px_#262626] disabled:opacity-50 disabled:cursor-not-allowed"
                         type="button"
                         disabled={loading}
-                        onClick={() => setError("Google login not implemented yet")}
+                        onClick={handleGoogleSignIn}
                     >
                         <IconBrandGoogle className="h-4 w-4 text-neutral-800 dark:text-neutral-300" />
                         <span className="text-sm text-neutral-700 dark:text-neutral-300">

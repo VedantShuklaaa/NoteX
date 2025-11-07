@@ -219,7 +219,7 @@ const noteShare: React.FC = () => {
                             value={imageKey}
                             onChange={(e) => setImageKey(e.target.value)}
                             placeholder="Enter a key to protect your image"
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all"
                         />
                         <p className="text-xs text-gray-500 dark:text-white mt-1">
                             Remember this key - you'll need it to access the image later
