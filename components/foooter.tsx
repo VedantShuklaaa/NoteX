@@ -18,7 +18,7 @@ export default function Foooter() {
         },
         {
           name: "How to use",
-          href: "#Hero2"
+          href: "/#Hero2"
         },
       ];
 

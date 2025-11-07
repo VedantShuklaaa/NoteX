@@ -1,12 +1,13 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from "next/navigation";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { IconBrandGoogle } from "@tabler/icons-react";
 import axios from "axios";
+import { signIn, useSession } from 'next-auth/react';
+
 
 interface LoginFormData {
     email: string;
@@ -27,19 +28,8 @@ interface ErrorResponse {
 }
 
 export default function Login() {
-
     const { data: session, status } = useSession();
     const router = useRouter();
-
-    useEffect(() => {
-        if (session) {
-          router.push('/dashboard'); 
-        }
-      }, [session, router]);
-    
-      const handleGoogleSignIn = () => {
-        signIn('google', { callbackUrl: '/dashboard' });
-      };
 
     const [formData, setFormData] = useState<LoginFormData>({
         email: "",
@@ -49,6 +39,12 @@ export default function Login() {
     const [error, setError] = useState<string>("");
     const [success, setSuccess] = useState<string>("");
 
+    useEffect(() => {
+        if (session) {
+          router.push('/dashboard');
+        }
+      }, [session, router]);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, value } = e.target;
         setFormData(prev => ({
@@ -57,6 +53,10 @@ export default function Login() {
         }));
         setError("");
     };
+
+    const handleGoogleLogin = () => {
+        signIn('google', { callbackUrl: '/dashboard' });
+      };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -77,7 +77,7 @@ export default function Login() {
 
         try {
             const response = await axios.post<LoginResponse>(
-                "/api/user/login",
+                "/api/auth/login",
                 {
                     email: formData.email,
                     password: formData.password,
@@ -188,7 +188,7 @@ export default function Login() {
                         className="group/btn shadow-input cursor-pointer relative flex h-10 w-full items-center justify-start space-x-2 rounded-xl bg-gray-50 px-4 font-medium text-black dark:bg-zinc-900 dark:shadow-[0px_0px_1px_1px_#262626] disabled:opacity-50 disabled:cursor-not-allowed"
                         type="button"
                         disabled={loading}
-                        onClick={handleGoogleSignIn}
+                        onClick={handleGoogleLogin}
                     >
                         <IconBrandGoogle className="h-4 w-4 text-neutral-800 dark:text-neutral-300" />
                         <span className="text-sm text-neutral-700 dark:text-neutral-300">

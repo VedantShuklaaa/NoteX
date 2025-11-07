@@ -55,7 +55,7 @@ export default function NavigationBar() {
 
   const checkAuth = async () => {
     try {
-      const response = await axios.get("/api/user/verify", {
+      const response = await axios.get("/api/auth/verify", {
         withCredentials: true,
       });
 
@@ -104,7 +104,7 @@ export default function NavigationBar() {
   const handleLogout = async () => {
     setIsLoading(true)
     try {
-      await axios.post("/api/user/logout", {}, {
+      await axios.post("/api/auth/logout", {}, {
         withCredentials: true,
       });
 
@@ -123,7 +123,7 @@ export default function NavigationBar() {
     <Navbar className="font-[roboto_Condensed]">
       <NavBody>
         <NavbarLogo />
-        <NavItems items={navItems.map(({ name, href }) => ({ name, Link: href }))} />
+        <NavItems  items={navItems.map(({ name, href }) => ({ name, Link: href }))}/>
         <div className="relative z-20 flex flex-row items-center space-x-2">
           {isloading ? (
             <div className="h-9 w-32 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700" />

@@ -14,50 +14,50 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User{
-  id                 String           @id @default(uuid())
-  email              String           @unique
-  password           String         
-  displayName        String           @default("userX")
-  createdAt          DateTime         @default(now())
-
+model User {
+  id             String         @id @default(uuid())
+  email          String         @unique
+  password       String
+  displayName    String         @default("userX")
+  createdAt      DateTime       @default(now())
+  provider       String? 
   // Relations
-  uploadedImages     noteDetails[]    @relation("UploadedImages")
-  fetchHistory       fetchDetails[]   @relation("FetchHistory")
+  uploadedImages noteDetails[]  @relation("UploadedImages")
+  fetchHistory   fetchDetails[] @relation("FetchHistory")
 
   @@index([email])
 }
 
-model noteDetails{
-  id                 String           @id @default(uuid())
-  type               String         
-  imgName            String
-  imageSize          Int
-  imageKey           String           @default("publicIMG")
-  createdAt          DateTime         @default(now())
+model noteDetails {
+  id        String   @id @default(uuid())
+  type      String
+  imgName   String
+  imageSize Int
+  imageKey  String   @default("publicIMG")
+  createdAt DateTime @default(now())
 
   // Relations
-  uploadedBy         String
-  uploader           User             @relation("UploadedImages", fields: [uploadedBy], references: [id], onDelete: Cascade)
+  uploadedBy String
+  uploader   User   @relation("UploadedImages", fields: [uploadedBy], references: [id], onDelete: Cascade)
 
-  fetchHistory       fetchDetails[]   @relation("ImageFetchHistory")
+  fetchHistory fetchDetails[] @relation("ImageFetchHistory")
 
   @@index([uploadedBy])
   @@index([type])
   @@index([createdAt])
 }
 
-model fetchDetails{
-  id                 String           @id @default(uuid())
-  type               String
-  accessedAt         DateTime         @default(now())
+model fetchDetails {
+  id         String   @id @default(uuid())
+  type       String
+  accessedAt DateTime @default(now())
 
   // Relations
-  accessedBy         String
-  accessor           User             @relation("FetchHistory", fields: [accessedBy], references: [id], onDelete: Cascade)
+  accessedBy String
+  accessor   User   @relation("FetchHistory", fields: [accessedBy], references: [id], onDelete: Cascade)
 
-  imageId            String
-  image              noteDetails      @relation("ImageFetchHistory", fields: [imageId], references: [id], onDelete: Cascade)
+  imageId String
+  image   noteDetails @relation("ImageFetchHistory", fields: [imageId], references: [id], onDelete: Cascade)
 
   @@index([accessedBy])
   @@index([imageId])

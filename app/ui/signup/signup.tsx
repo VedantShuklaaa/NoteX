@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { IconBrandGoogle } from "@tabler/icons-react";
 import axios from "axios";
+import { signIn } from 'next-auth/react';
 
 interface SignupFormData {
     email: string;
@@ -48,6 +49,10 @@ export default function Signup() {
         setError("");
     };
 
+    const handleGoogleSignup = () => {
+        signIn('google', { callbackUrl: '/dashboard' });
+      };
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError("");
@@ -67,7 +72,7 @@ export default function Signup() {
 
         try {
             const response = await axios.post<SignupResponse>(
-                "/api/user/signup",
+                "/api/auth/signup",
                 {
                     email: formData.email,
                     password: formData.password,
@@ -195,7 +200,7 @@ export default function Signup() {
                         className="group/btn shadow-input cursor-pointer relative flex h-10 w-full items-center justify-start space-x-2 rounded-xl bg-gray-50 px-4 font-medium text-black dark:bg-zinc-900 dark:shadow-[0px_0px_1px_1px_#262626] disabled:opacity-50 disabled:cursor-not-allowed"
                         type="button"
                         disabled={loading}
-                        onClick={() => setError("Google signup not implemented yet")}
+                        onClick={handleGoogleSignup}
                     >
                         <IconBrandGoogle className="h-4 w-4 text-neutral-800 dark:text-neutral-300" />
                         <span className="text-sm text-neutral-700 dark:text-neutral-300">

@@ -4,5 +4,6 @@ export const config = {
   matcher: [
     "/dashboard/:path*",
     "/notes/:path*",
+    // Add other protected routes here
   ],
 };
