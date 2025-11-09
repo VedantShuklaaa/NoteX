@@ -7,6 +7,7 @@ import { getUserFromToken } from "@/lib/auth";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import * as bcrypt from 'bcryptjs';
+import { decode } from "next-auth/jwt";
 
 const SALT_ROUNDS = Number(process.env.SaltRounds) || 10;
 
@@ -59,10 +60,45 @@ export async function PUT(req: NextRequest) {
     }
 
     const cookieStore = await cookies();
-    const token = cookieStore.get("token")?.value;
-    const userData = getUserFromToken(token || "");
+    const jwtToken = cookieStore.get("token")?.value;
+    const nextAuthToken = cookieStore.get("next-auth.session-token")?.value || cookieStore.get("__Secure-next-auth.session-token")?.value;
 
-    if (!userData) {
+    if (!jwtToken && !nextAuthToken) {
+        return NextResponse.json(
+            {
+                authenticated: false,
+                message: "no token found"
+            },
+            { status: 401 }
+        );
+    }
+
+    let userEmail: string | null = null;
+
+    if (nextAuthToken) {
+        try {
+            const decoded = await decode({
+                token: nextAuthToken,
+                secret: process.env.NEXTAUTH_SECRET!,
+            });
+            console.log("decoded: ", decoded);
+
+            if (decoded?.email) {
+                userEmail = decoded.email as string;
+            }
+        } catch (error) {
+            console.error("NextAuth token decode error:", error);
+        }
+    }
+
+    if (!userEmail && jwtToken) {
+        const userData = getUserFromToken(jwtToken);
+        if (userData?.email) {
+            userEmail = userData.email;
+        }
+    }
+
+    if (!userEmail) {
         return NextResponse.json(
             { error: "unauthorized: can't find user" },
             { status: 401 }
@@ -99,7 +135,7 @@ export async function PUT(req: NextRequest) {
     try {
         const user = await db.user.findUnique({
             where: {
-                email: userData.email
+                email: userEmail
             },
             select: {
                 id: true,
@@ -107,6 +143,7 @@ export async function PUT(req: NextRequest) {
                 displayName: true
             }
         });
+        console.log("user: ", user)
 
         if (!user) {
             return NextResponse.json(

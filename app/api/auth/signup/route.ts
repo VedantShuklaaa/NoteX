@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import db from '@/lib/db';
 import { z } from "zod";
 import * as bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 const signUpSchema = z.object({
     email: z.string().email("invalid email format"),
@@ -11,6 +12,7 @@ const signUpSchema = z.object({
 });
 
 const SALT_ROUNDS = Number(process.env.SALT_ROUNDS ?? 10);
+const JWT_PASSWORD = String(process.env.JWT_PASSWORD);
 
 export async function POST(req: NextRequest) {
     let body: unknown;
@@ -41,19 +43,41 @@ export async function POST(req: NextRequest) {
                 email,
                 password: hash,
                 displayName: displayName || email.split('@')[0],
+                provider: 'credentials'
             },
             select: {
                 id: true,
                 email: true,
                 displayName: true,
+                provider: true,
                 createdAt: true,
             }
         });
 
-        return NextResponse.json(
+        const token = jwt.sign(
+            { 
+                email: user.email,
+                id: user.id 
+            },
+            JWT_PASSWORD,
+            { expiresIn: '7d' }
+        );
+
+        const response = NextResponse.json(
             { message: "signed up successfully", user },
             { status: 201 }
         );
+
+        response.cookies.set("token", token, {
+            httpOnly: true,
+            path: "/",
+            maxAge: 60 * 60 * 24 * 7,
+            sameSite: "lax",
+            secure: process.env.NODE_ENV === "production"
+        });
+
+        return response;
+
     } catch (err: unknown) {
         if (err && typeof err === "object") {
             const prismaErr = err as Prisma.PrismaClientKnownRequestError;

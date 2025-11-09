@@ -28,7 +28,7 @@ interface ErrorResponse {
 }
 
 export default function Login() {
-    const { data: session, status } = useSession();
+    const { data: session } = useSession();
     const router = useRouter();
 
     const [formData, setFormData] = useState<LoginFormData>({
@@ -41,7 +41,7 @@ export default function Login() {
 
     useEffect(() => {
         if (session) {
-          router.push('/dashboard');
+          router.push('/navs/auth/userDashboard');
         }
       }, [session, router]);
 
@@ -55,7 +55,7 @@ export default function Login() {
     };
 
     const handleGoogleLogin = () => {
-        signIn('google', { callbackUrl: '/dashboard' });
+        signIn('google', { callbackUrl: '/navs/auth/userDashboard' });
       };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {

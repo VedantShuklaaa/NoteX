@@ -5,6 +5,8 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Prisma } from "@prisma/client";
 import { cookies } from "next/headers";
 import { getUserFromToken } from "@/lib/auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { decode } from "next-auth/jwt";
 
 
 export async function GET(req: NextRequest) {
@@ -30,25 +32,76 @@ export async function GET(req: NextRequest) {
             return await getSignedUrl(s3Client, command, { expiresIn: 3600 });
         }
 
-        const cookieStore = await cookies();
-        const token = cookieStore.get("token")?.value;
-        const userData = getUserFromToken(token || "");
+    
 
-        if (!userData) {
+        const cookieStore = await cookies();
+        const jwtToken = cookieStore.get("token")?.value;
+        const nextAuthToken = cookieStore.get("next-auth.session-token")?.value || cookieStore.get("__Secure-next-auth.session-token")?.value;
+
+        if (!jwtToken && !nextAuthToken) {
             return NextResponse.json(
-                { error: "Unauthorized" },
+                {
+                    authenticated: false,
+                    message: "no token found"
+                },
+                { status: 401 }
+            );
+        }
+
+        let userEmail: string | null = null;
+
+        if (nextAuthToken) {
+            try {
+                const decoded = await decode({
+                    token: nextAuthToken,
+                    secret: process.env.NEXTAUTH_SECRET!,
+                });
+                console.log("decoded: ", decoded);
+
+                if (decoded?.email) {
+                    userEmail = decoded.email as string;
+                }
+            } catch (error) {
+                console.error("NextAuth token decode error:", error);
+            }
+        }
+
+        if (!userEmail && jwtToken) {
+            const userData = getUserFromToken(jwtToken);
+            if (userData?.email) {
+                userEmail = userData.email;
+            }
+        }
+
+        if (!userEmail) {
+            return NextResponse.json(
+                {
+                    authenticated: false,
+                    message: "invalid or expired token"
+                },
                 { status: 401 }
             );
         }
 
         const user = await db.user.findUnique({
-            where: { email: userData.email }
+            where: {
+                email: userEmail
+            },
+            select: {
+                id: true,
+                email: true,
+                displayName: true,
+                createdAt: true,
+            }
         });
 
         if (!user) {
             return NextResponse.json(
-                { error: "User not found" },
-                { status: 404 }
+                {
+                    authenticated: false,
+                    message: "user not found"
+                },
+                { status: 401 }
             );
         }
 
@@ -66,12 +119,13 @@ export async function GET(req: NextRequest) {
                 createdAt: 'desc'
             }
         });
+
         const imagesWithPublicUrls = await Promise.all(
             publicImages.map(async (image) => {
                 const signedUrl = await getSignedImageUrl(
                     `${image.uploader.displayName}/${image.type}/${image.imgName}`
                 );
-                
+
                 return {
                     id: image.id,
                     imgName: image.imgName,
@@ -79,7 +133,7 @@ export async function GET(req: NextRequest) {
                     imageSize: image.imageSize,
                     createdAt: image.createdAt.toISOString(),
                     uploadedBy: image.uploader.email,
-                    imageUrl: signedUrl 
+                    imageUrl: signedUrl
                 };
             })
         );
@@ -103,7 +157,7 @@ export async function GET(req: NextRequest) {
                 const signedUrl = await getSignedImageUrl(
                     `${image.uploader.displayName}/${image.type}/${image.imgName}`
                 );
-                
+
                 return {
                     id: image.id,
                     imgName: image.imgName,
@@ -111,12 +165,15 @@ export async function GET(req: NextRequest) {
                     imageSize: image.imageSize,
                     createdAt: image.createdAt.toISOString(),
                     uploadedBy: image.uploader.email,
-                    imageUrl: signedUrl 
+                    imageUrl: signedUrl
                 };
             })
         );
 
-        return NextResponse.json({ PrivateImages: imagesWithPrivateUrls, PublicImages: imagesWithPublicUrls });
+        return NextResponse.json({
+            PrivateImages: imagesWithPrivateUrls,
+            PublicImages: imagesWithPublicUrls
+        });
 
     } catch (err: unknown) {
         console.error("Fetch error:", err);

@@ -50,7 +50,7 @@ export default function Signup() {
     };
 
     const handleGoogleSignup = () => {
-        signIn('google', { callbackUrl: '/dashboard' });
+        signIn('google', { callbackUrl: '/navs/auth/userDashboard' });
       };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {

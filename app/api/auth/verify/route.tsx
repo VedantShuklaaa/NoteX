@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getUserFromToken } from "@/lib/auth";
+import { decode } from "next-auth/jwt";
 import db from "@/lib/db";
 
 export async function GET(req: NextRequest) {
     try {
         const cookieStore = await cookies();
-        const token = cookieStore.get("token")?.value;
+        const jwtToken = cookieStore.get("token")?.value;
+        const nextAuthToken = cookieStore.get("next-auth.session-token")?.value || cookieStore.get("__Secure-next-auth.session-token")?.value;
 
-        if (!token) {
+        if (!jwtToken && !nextAuthToken) {
             return NextResponse.json(
                 {
                     authenticated: false,
@@ -18,9 +20,31 @@ export async function GET(req: NextRequest) {
             );
         }
 
-        const userData = getUserFromToken(token);
+        let userEmail: string | null = null;
 
-        if (!userData) {
+        if (nextAuthToken) {
+            try {
+                const decoded = await decode({
+                    token: nextAuthToken,
+                    secret: process.env.NEXTAUTH_SECRET!,
+                });
+
+                if (decoded?.email) {
+                    userEmail = decoded.email as string;
+                }
+            } catch (error) {
+                console.error("NextAuth token decode error:", error);
+            }
+        }
+
+        if (!userEmail && jwtToken) {
+            const userData = getUserFromToken(jwtToken);
+            if (userData?.email) {
+                userEmail = userData.email;
+            }
+        }
+
+        if (!userEmail) {
             return NextResponse.json(
                 {
                     authenticated: false,
@@ -32,7 +56,7 @@ export async function GET(req: NextRequest) {
 
         const user = await db.user.findUnique({
             where: {
-                email: userData.email
+                email: userEmail
             },
             select: {
                 id: true,

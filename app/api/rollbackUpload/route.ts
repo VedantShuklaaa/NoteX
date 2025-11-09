@@ -2,18 +2,78 @@ import { NextRequest, NextResponse } from "next/server";
 import db from '@/lib/db';
 import { cookies } from "next/headers";
 import { getUserFromToken } from "@/lib/auth";
+import { decode } from "next-auth/jwt";
 
 export async function DELETE(req: NextRequest) {
     const cookieStore = await cookies();
-    const token = cookieStore.get("token")?.value;
-    const userData = getUserFromToken(token || "");
+        const jwtToken = cookieStore.get("token")?.value;
+        const nextAuthToken = cookieStore.get("next-auth.session-token")?.value || cookieStore.get("__Secure-next-auth.session-token")?.value;
 
-    if (!userData) {
-        return NextResponse.json(
-            { error: "unauthorized" },
-            { status: 401 }
-        );
-    }
+        if (!jwtToken && !nextAuthToken) {
+            return NextResponse.json(
+                {
+                    authenticated: false,
+                    message: "no token found"
+                },
+                { status: 401 }
+            );
+        }
+
+        let userEmail: string | null = null;
+
+        if (nextAuthToken) {
+            try {
+                const decoded = await decode({
+                    token: nextAuthToken,
+                    secret: process.env.NEXTAUTH_SECRET!,
+                });
+
+                if (decoded?.email) {
+                    userEmail = decoded.email as string;
+                }
+            } catch (error) {
+                console.error("NextAuth token decode error:", error);
+            }
+        }
+
+        if (!userEmail && jwtToken) {
+            const userData = getUserFromToken(jwtToken);
+            if (userData?.email) {
+                userEmail = userData.email;
+            }
+        }
+
+        if (!userEmail) {
+            return NextResponse.json(
+                {
+                    authenticated: false,
+                    message: "invalid or expired token"
+                },
+                { status: 401 }
+            );
+        }
+
+        const user = await db.user.findUnique({
+            where: {
+                email: userEmail
+            },
+            select: {
+                id: true,
+                email: true,
+                displayName: true,
+                createdAt: true,
+            }
+        });
+
+        if (!user) {
+            return NextResponse.json(
+                {
+                    authenticated: false,
+                    message: "user not found"
+                },
+                { status: 401 }
+            );
+        }
 
     const { searchParams } = new URL(req.url);
     const recordId = searchParams.get('id');
@@ -42,7 +102,7 @@ export async function DELETE(req: NextRequest) {
             );
         }
 
-        if (record.uploader.email !== userData.email) {
+        if (record.uploader.email !== userEmail) {
             return NextResponse.json(
                 { error: "Unauthorized to delete this record" },
                 { status: 403 }

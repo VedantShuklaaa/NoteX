@@ -4,6 +4,8 @@ import axios from "axios";
 import { Calendar, User, Hash, Lock, Unlock, Image as ImageIcon } from "lucide-react";
 import { X, AlertCircle } from "lucide-react";
 import Loader from "@/components/ui/loader";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 interface ImageRecord {
     id: string;
@@ -21,15 +23,22 @@ export default function UserDashboard() {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
+    const { data: session, status } = useSession();
+    const router = useRouter();
+
     useEffect(() => {
-        fetchImages();
-    }, []);
+        if (status === 'unauthenticated') {
+            router.push('/navs/auth/login');
+        } else if (status === 'authenticated' || status === 'loading') {
+            fetchImages();
+        }
+    }, [status, router]);
 
     const fetchImages = async () => {
         setLoading(true);
         setError(null);
         try {
-            const response = await axios.get('/api/user/dashboard');
+            const response = await axios.get('/api/auth/dashboard');
 
             console.log('Backend response:', response.data);
             if (response.data.PublicImages && Array.isArray(response.data.PublicImages)) {
@@ -43,23 +52,36 @@ export default function UserDashboard() {
             }
         } catch (err: any) {
             console.error('Error fetching images:', err);
-            setError(err.response?.data?.error || 'Failed to load images');
+            if (err.response?.status === 401) {
+                router.push('/navs/auth/login');
+            } else {
+                setError(err.response?.data?.error || 'Failed to load images');
+            }
         } finally {
             setLoading(false);
         }
     };
 
-    if (loading) {
+    if (loading || status === 'loading') {
         return <Loader />;
     }
+
+    if (status === 'unauthenticated') {
+        return null;
+    }
+
+    const userEmail = session?.user?.email || publicImages[0]?.uploadedBy || privateImages[0]?.uploadedBy || 'User';
+    const userName = session?.user?.name || userEmail;
 
     return (
         <div className="absolute top-0 h-[110vh] w-full flex flex-col items-center justify-center z-10 p-4 font-[roboto_Condensed]">
             <div className="h-[90vh] w-[95vw] flex flex-col items-center justify-center gap-2 rounded-xl border border-black/10 dark:border-white/20 bg-transparent backdrop-blur-[100px] dark:backdrop-blur-2xl dark:shadow-[0_20px_60px_rgba(107,91,205,0.4)] p-6 overflow-hidden">
                 <div className="h-[10vh] w-[90vw] flex flex-col items-center justify-center md:flex-row gap-6 rounded-xl border border-black/10 dark:border-white/20 bg-transparent backdrop-blur-[100px] dark:backdrop-blur-2xl dark:shadow-[0_20px_60px_rgba(107,91,205,0.4)] p-6 overflow-hidden">
-                <span className="text-md md:text-2xl lg:text-3xl text-center">
-                    <h1>Uploaded by {publicImages[0].uploadedBy}</h1>
-                </span>
+                        <span className="text-md md:text-2xl lg:text-3xl text-center">
+                            <h1>
+                                {session?.user?.name ? `Welcome, ${userName}` : `Uploaded by ${userEmail}`}
+                            </h1>
+                        </span>   
                 </div>
                 <div className="h-[90vh] w-[90vw] flex flex-col md:flex-row gap-6 rounded-xl border border-black/10 dark:border-white/20 bg-transparent backdrop-blur-[100px] dark:backdrop-blur-2xl dark:shadow-[0_20px_60px_rgba(107,91,205,0.4)] p-2 overflow-hidden">
                     <div className="flex-1 overflow-y-auto flex flex-col rounded-xl bg-white/50 dark:bg-black/50 backdrop-blur-2xl p-4">
@@ -71,6 +93,12 @@ export default function UserDashboard() {
                             <div className="flex flex-col items-center justify-center h-full text-red-500">
                                 <AlertCircle className="w-16 h-16 mb-4" />
                                 <p className="text-lg">{error}</p>
+                                <button
+                                    onClick={fetchImages}
+                                    className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                                >
+                                    Retry
+                                </button>
                             </div>
                         ) : publicImages.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400">
@@ -96,6 +124,12 @@ export default function UserDashboard() {
                             <div className="flex flex-col items-center justify-center h-full text-red-500">
                                 <AlertCircle className="w-16 h-16 mb-4" />
                                 <p className="text-lg">{error}</p>
+                                <button
+                                    onClick={fetchImages}
+                                    className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-xl hover:bg-blue-600"
+                                >
+                                    Retry
+                                </button>
                             </div>
                         ) : privateImages.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400">

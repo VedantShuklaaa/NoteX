@@ -15,20 +15,22 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import Loader from "@/components/ui/loader";
+import { useSession, signOut } from "next-auth/react";
 
 interface User {
   email: string;
   displayName: string;
+  id: string;
 }
 
 export default function NavigationBar() {
+  const { data: session, status } = useSession();
+
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isloading, setIsLoading] = useState(false);
-
-  
 
   const navItems = [
     {
@@ -50,26 +52,46 @@ export default function NavigationBar() {
   ];
 
   useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    try {
-      const response = await axios.get("/api/auth/verify", {
-        withCredentials: true,
-      });
-
-      if (response.data.authenticated) {
+    const checkAuth = async () => {
+      if (status === 'authenticated' && session?.user) {
         setIsAuthenticated(true);
-        setUser(response.data.user);
+        setUser({
+          email: session.user.email || '',
+          displayName: session.user.name || '',
+          id: session.user.email || '',
+        });
+        setIsLoading(false);
+        return;
       }
-    } catch (error) {
-      setIsAuthenticated(false);
-      setUser(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+
+      if (status === 'loading') {
+        return;
+      }
+
+      try {
+        const response = await axios.get("/api/auth/verify", {
+          withCredentials: true,
+        });
+
+        if (response.data.authenticated) {
+          setIsAuthenticated(true);
+          setUser(response.data.user);
+        } else {
+          setIsAuthenticated(false);
+          setUser(null);
+        }
+      } catch (error) {
+        setIsAuthenticated(false);
+        setUser(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [session, status]);
+
+
 
   useEffect(() => {
     const navEntry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
@@ -84,7 +106,7 @@ export default function NavigationBar() {
   }, []);
 
 
-  if (isloading) {
+  if (isloading || status === 'loading') {
     return (
       <Loader />
     );
@@ -98,23 +120,29 @@ export default function NavigationBar() {
       setIsLoading(false)
     } catch (err) {
       console.log(err)
+      setIsLoading(false);
     }
   }
 
   const handleLogout = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      await axios.post("/api/auth/logout", {}, {
-        withCredentials: true,
-      });
+      if (session) {
+        await signOut({ redirect: false });
+      } else {
+        await axios.post("/api/auth/logout", {}, {
+          withCredentials: true,
+        });
+      }
 
       setIsAuthenticated(false);
       setUser(null);
       setIsMenuOpen(false);
       router.push("/");
-      setIsLoading(false)
     } catch (error) {
       console.error("Logout error:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -123,13 +151,16 @@ export default function NavigationBar() {
     <Navbar className="font-[roboto_Condensed]">
       <NavBody>
         <NavbarLogo />
-        <NavItems  items={navItems.map(({ name, href }) => ({ name, Link: href }))}/>
+        <NavItems items={navItems.map(({ name, href }) => ({ name, Link: href }))} />
         <div className="relative z-20 flex flex-row items-center space-x-2">
           {isloading ? (
             <div className="h-9 w-32 animate-pulse rounded-xl bg-gray-200 dark:bg-gray-700" />
           ) : isAuthenticated ? (
             <>
-              <span className="hidden md:flex xl:h-10 xl:w-22 p-2 items-center justify-center rounded-xl text-sm font-medium text-neutral-700 dark:text-neutral-300 cursor-pointer hover:bg-white/40" onClick={dashboard}>
+              <span
+                className="xl:h-10 xl:w-25 p-2 flex items-center justify-center rounded-xl text-sm font-medium text-neutral-700 dark:text-neutral-300 cursor-pointer hover:bg-white/40"
+                onClick={dashboard}
+              >
                 {user?.displayName}
               </span>
               <NavbarButton

@@ -5,7 +5,7 @@ export async function POST() {
     try {
         const cookieStore = await cookies();
         
-        const token = cookieStore.get("token");
+        const token = cookieStore.get("token") || cookieStore.get("next-auth.session-token")?.value || cookieStore.get("__Secure-next-auth.session-token")?.value;
         
         if (!token) {
             return NextResponse.json(

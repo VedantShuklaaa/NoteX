@@ -57,17 +57,15 @@ export const authOptions: NextAuthOptions = {
           });
 
           if (!existingUser) {
-            // Create new user from Google
             await prisma.user.create({
               data: {
                 email: user.email!,
                 displayName: user.name || profile?.name as string,
-                password: "", // No password for Google users
+                password: "", 
                 provider: "google",
               }
             });
           } else if (existingUser.provider !== "google") {
-            // User exists with email/password, link Google account
             await prisma.user.update({
               where: { email: user.email! },
               data: {
@@ -87,8 +85,7 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session?.user) {
         session.user.email = token.sub!;
-        
-        // Fetch user from database to get latest data
+    
         const dbUser = await prisma.user.findUnique({
           where: { id: token.sub! }
         });
@@ -108,7 +105,7 @@ export const authOptions: NextAuthOptions = {
     },
   },
   pages: {
-    signIn: '/login',
+    signIn: '/navs/auth/login', 
   },
   session: {
     strategy: "jwt",
