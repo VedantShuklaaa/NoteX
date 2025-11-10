@@ -171,7 +171,6 @@ export default function NotesFind() {
 
 const ImageCard: React.FC<{ image: ImageRecord }> = ({ image }) => {
     const [imageLoaded, setImageLoaded] = useState(false);
-    const [fullImage, setFullImage] = useState<boolean>(false);
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('en-US', {
@@ -210,7 +209,6 @@ const ImageCard: React.FC<{ image: ImageRecord }> = ({ image }) => {
                             className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
                             onLoad={() => setImageLoaded(true)}
                             onError={() => setImageLoaded(true)}
-                            onClick={() => setFullImage(true)}
                         />
                     </>
                 ) : (
