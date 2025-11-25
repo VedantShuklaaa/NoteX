@@ -1,24 +1,77 @@
-import { NextResponse, NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { decode } from "next-auth/jwt";
 import { getUserFromToken } from "@/lib/auth";
+import db from "@/lib/db";
 
-export async function GET(req: NextRequest) {
+export async function GET(_request: NextRequest) {
     try {
         const cookieStore = await cookies();
-        const token = cookieStore.get('token')?.value || cookieStore.get("next-auth.session-token")?.value || cookieStore.get("__Secure-next-auth.session-token")?.value;
+        const jwtToken = cookieStore.get("token")?.value;
+        const nextAuthToken = cookieStore.get("next-auth.session-token")?.value || cookieStore.get("__Secure-next-auth.session-token")?.value;
 
-        if (!token) {
+        if (!jwtToken && !nextAuthToken) {
             return NextResponse.json(
-                { error: "not authenticated" },
+                {
+                    authenticated: false,
+                    message: "no token found"
+                },
                 { status: 401 }
             );
         }
 
-        const userData = getUserFromToken(token);
+        let userEmail: string | null = null;
 
-        if (!userData) {
+        if (nextAuthToken) {
+            try {
+                const decoded = await decode({
+                    token: nextAuthToken,
+                    secret: process.env.NEXTAUTH_SECRET!,
+                });
+
+                if (decoded?.email) {
+                    userEmail = decoded.email as string;
+                }
+            } catch (error) {
+                console.error("NextAuth token decode error:", error);
+            }
+        }
+
+        if (!userEmail && jwtToken) {
+            const userData = getUserFromToken(jwtToken);
+            if (userData?.email) {
+                userEmail = userData.email;
+            }
+        }
+
+        if (!userEmail) {
             return NextResponse.json(
-                { error: "invalid or expired token" },
+                {
+                    authenticated: false,
+                    message: "invalid or expired token"
+                },
+                { status: 401 }
+            );
+        }
+
+        const user = await db.user.findUnique({
+            where: {
+                email: userEmail
+            },
+            select: {
+                id: true,
+                email: true,
+                displayName: true,
+                createdAt: true,
+            }
+        });
+
+        if (!user) {
+            return NextResponse.json(
+                {
+                    authenticated: false,
+                    message: "user not found"
+                },
                 { status: 401 }
             );
         }
@@ -27,8 +80,8 @@ export async function GET(req: NextRequest) {
             {
                 authenticated: true,
                 user: {
-                    email: userData.email,
-                    id: userData.id,
+                    email: user.email,
+                    id: user.id,
                 }
             },
             { status: 200 }
