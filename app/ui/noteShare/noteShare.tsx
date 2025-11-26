@@ -1,8 +1,9 @@
 "use client";
-import React, { useState, ChangeEvent, DragEvent, useEffect } from 'react';
+import React, { useState, ChangeEvent, DragEvent } from 'react';
 import { Upload, X, CheckCircle, AlertCircle, Lock, Unlock, FileImage } from 'lucide-react';
 import axios from 'axios';
 import Loader from '@/components/ui/loader';
+import Image from 'next/image';
 
 type UploadType = 'public' | 'private';
 
@@ -11,19 +12,7 @@ interface UploadStatus {
     message: string;
 }
 
-interface UploadResponse {
-    signedUrl: string;
-    dbRecord: {
-        id: string;
-        type: string;
-        imgName: string;
-        imageSize: number;
-        createdAt: string;
-    };
-    message: string;
-}
-
-const noteShare: React.FC = () => {
+const NoteShare: React.FC = () => {
     const [isDragging, setIsDragging] = useState<boolean>(false);
     const [file, setFile] = useState<File | null>(null);
     const [preview, setPreview] = useState<string | null>(null);
@@ -258,7 +247,7 @@ const noteShare: React.FC = () => {
                 ) : (
                     <div className="space-y-4">
                         <div className="relative rounded-xl overflow-hidden bg-gray-100 shadow-lg">
-                            <img
+                            <Image
                                 src={preview || ''}
                                 alt="Preview"
                                 className="w-full h-72 object-cover"
@@ -337,4 +326,4 @@ const noteShare: React.FC = () => {
     );
 };
 
-export default noteShare;
+export default NoteShare;

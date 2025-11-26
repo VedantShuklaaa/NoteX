@@ -6,6 +6,7 @@ import { X, AlertCircle } from "lucide-react";
 import Loader from "@/components/ui/loader";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 interface ImageRecord {
     id: string;
@@ -26,13 +27,7 @@ export default function UserDashboard() {
     const { data: session, status } = useSession();
     const router = useRouter();
 
-    useEffect(() => {
-        if (status === 'unauthenticated') {
-            router.push('/navs/auth/login');
-        } else if (status === 'authenticated' || status === 'loading') {
-            fetchImages();
-        }
-    }, [status, router]);
+    
 
     const fetchImages = async () => {
         setLoading(true);
@@ -50,17 +45,30 @@ export default function UserDashboard() {
                 setPrivateImages(response.data.PrivateImages);
                 console.log('Loaded private images:', response.data.PrivateImages.length);
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Error fetching images:', err);
-            if (err.response?.status === 401) {
-                router.push('/navs/auth/login');
+            if (typeof err === 'object' && err !== null && 'response' in err) {
+                const response = (err as any).response;
+                if (response?.status === 401) {
+                    router.push('/navs/auth/login');
+                } else {
+                    setError(response?.data?.error || 'Failed to load images');
+                }
             } else {
-                setError(err.response?.data?.error || 'Failed to load images');
+                setError('Failed to load images');
             }
         } finally {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        if (status === 'unauthenticated') {
+            router.push('/navs/auth/login');
+        } else if (status === 'authenticated' || status === 'loading') {
+            fetchImages();
+        }
+    }, [status, router, fetchImages()]);
 
     if (loading || status === 'loading') {
         return <Loader />;
@@ -189,8 +197,8 @@ const ImageCard: React.FC<{ image: ImageRecord }> = ({ image }) => {
                             <span className="text-sm font-medium">Close</span>
                         </button>
 
-                        <img
-                            src={image.imageUrl}
+                        <Image
+                            src="image.imageUrl"
                             alt={image.imgName}
                             className="w-full h-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
                         />
@@ -228,7 +236,7 @@ const ImageCard: React.FC<{ image: ImageRecord }> = ({ image }) => {
                                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
                                 </div>
                             )}
-                            <img
+                            <Image
                                 src={image.imageUrl}
                                 alt={image.imgName}
                                 className={`w-full h-full object-cover transition-all duration-300 cursor-pointer hover:scale-110 ${imageLoaded ? 'opacity-100' : 'opacity-0'

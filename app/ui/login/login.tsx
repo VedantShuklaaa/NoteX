@@ -89,6 +89,7 @@ export default function Login() {
                     withCredentials: true,
                 }
             );
+            console.log(response);
 
             setSuccess("Login successful! Redirecting...");
 
@@ -96,7 +97,7 @@ export default function Login() {
                 router.push("/navs/findnotes");
             }, 1000);
 
-        } catch (err) {
+        } catch (err: unknown) {
             if (axios.isAxiosError(err)) {
                 const errorData = err.response?.data as ErrorResponse;
                 setError(errorData?.error || "Login failed. Please try again.");

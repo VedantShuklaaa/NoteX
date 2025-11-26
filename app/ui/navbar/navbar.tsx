@@ -80,7 +80,8 @@ export default function NavigationBar() {
           setIsAuthenticated(false);
           setUser(null);
         }
-      } catch (error) {
+      } catch (err: unknown) {
+        console.log("err: ", err);
         setIsAuthenticated(false);
         setUser(null);
       } finally {

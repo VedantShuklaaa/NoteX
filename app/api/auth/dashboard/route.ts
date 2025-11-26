@@ -5,15 +5,10 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Prisma } from "@prisma/client";
 import { cookies } from "next/headers";
 import { getUserFromToken } from "@/lib/auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { decode } from "next-auth/jwt";
 
 
 export async function GET(req: NextRequest) {
-    const { searchParams } = new URL(req.url);
-    const type = searchParams.get('type');
-    const id = searchParams.get('id');
-    const imageKey = searchParams.get('imageKey');
 
     const s3Client = new S3Client({
         region: process.env.REGION!,
